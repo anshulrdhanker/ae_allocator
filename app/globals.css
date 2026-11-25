@@ -953,3 +953,13 @@ strong, .route-chip, .policy-result, .capacity-usage { font-variant-numeric: tab
 }
 
 .benchmark-page .closing-thanks { margin: 12px 0 0; text-align: center; font-size: 15px; line-height: 1.5 }
+
+@media (max-width: 700px) {
+  .optimizer-entry { padding-bottom: calc(52px + env(safe-area-inset-bottom)) }
+  .mobile-timeline {
+    position: fixed; z-index: 10; inset: auto 0 0;
+    padding: 0 max(14px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(14px,env(safe-area-inset-left));
+    background: var(--canvas); color: var(--muted); font-size: 12px;
+  }
+  .mobile-timeline input { height: 44px; touch-action: pan-y }
+}

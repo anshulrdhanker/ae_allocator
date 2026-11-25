@@ -54,6 +54,20 @@ export default function PresentationDocument({data,controller,onParameters,busy=
    <span aria-hidden="true">|</span>
    <a href="https://x.com/anshul_dhanker" target="_blank" rel="noopener noreferrer">X</a>
   </nav>;
+ const timeline=<div className="playback-timeline">
+  <div className="playback-track">
+   {data&&<div className="screen-ticks" aria-hidden="true">{screenChanges.map(at=><span key={at} style={{left:(100*at/duration)+'%'}}/>)}</div>}
+  <input type="range" aria-label="Presentation timeline" min="0" max={duration} step="any" value={elapsed}
+   disabled={!data} aria-valuetext={formatPlaybackTime(elapsed)+' of '+formatPlaybackTime(duration)}
+   style={{'--played':(100*elapsed/duration)+'%'}}
+   onChange={e=>{
+     const time=e.target.valueAsNumber;
+     dispatch({type:'seek-time',time,keepPlaying:true});
+     if(mobile&&!reduced&&!state.playing&&time<duration)dispatch({type:'resume'});
+   }}/>
+  </div>
+  <span className="playback-time">{formatPlaybackTime(elapsed)} / {data?formatPlaybackTime(duration):'–:––'}</span>
+ </div>;
  return <article className="routing-presentation" data-footer-ready={footerReady||undefined} data-beat={current.chapter} data-workspace-exiting={exiting||undefined} data-playhead={Math.round(state.time)} data-playing={state.playing&&!suspended} style={{'--dock':snapshot.dock}}>
  {!closing&&<div className="presentation-slide" style={exiting?{display:'block',opacity:1-ease(current.local/WORKSPACE_EXIT_MS),transform:`translateY(${18*ease(current.local/WORKSPACE_EXIT_MS)}px)`}:undefined}>
  {profiles()}
@@ -64,16 +78,7 @@ export default function PresentationDocument({data,controller,onParameters,busy=
   <button disabled={!data} onClick={()=>dispatch({type:'next'})}>Next step</button>
  </nav>}
  <nav className="transport" aria-label="Presentation playback"><button disabled={state.time===0} onClick={()=>dispatch({type:'back'})}>Back</button>{!reduced&&<button disabled={snapshot.done} onClick={()=>dispatch({type:'toggle'})}>{state.playing?'Pause':'Play'}</button>}<button disabled={snapshot.done||(!data&&snapshot.chapter!=='intro_problem')} onClick={()=>dispatch({type:'next'})}>Next</button>{!closing&&<button onClick={()=>dispatch({type:'replay',reduced})}>Replay</button>}<label><span className="speed-caption">Speed</span> <select aria-label="Playback speed" value={speed} disabled={reduced} onChange={e=>setSpeed(Number(e.target.value))}>{[.5,1,1.2,1.5,2].map(s=><option key={s} value={s}>{s}×</option>)}</select></label>
- <div className="playback-timeline">
-  <div className="playback-track">
-   {data&&<div className="screen-ticks" aria-hidden="true">{screenChanges.map(at=><span key={at} style={{left:(100*at/duration)+'%'}}/>)}</div>}
-  <input type="range" aria-label="Presentation timeline" min="0" max={duration} step="any" value={elapsed}
-   disabled={!data} aria-valuetext={formatPlaybackTime(elapsed)+' of '+formatPlaybackTime(duration)}
-   style={{'--played':(100*elapsed/duration)+'%'}}
-   onChange={e=>dispatch({type:'seek-time',time:e.target.valueAsNumber,keepPlaying:true})}/>
-  </div>
-  <span className="playback-time">{formatPlaybackTime(elapsed)} / {data?formatPlaybackTime(duration):'–:––'}</span>
- </div>
+ {!mobile&&timeline}
  <label className="motion-toggle"><input type="checkbox" checked={reduced} disabled={!!osReduced} onChange={e=>setReduced(e.target.checked)}/>Static steps</label></nav>
  </div>}
  {closing&&data&&<BenchmarkPage data={data} line={line} time={current.local} reduced={reduced}>
@@ -82,5 +87,6 @@ export default function PresentationDocument({data,controller,onParameters,busy=
    </button><span aria-hidden="true">|</span>{profiles(true)}</div>
  </BenchmarkPage>}
  {!mobile&&!isResult&&data&&snapshot.frame===1&&<ModelAppendix onParameters={onParameters} data={data} summary={summary} onInspect={()=>dispatch({type:'pause'})}/>}
+ {mobile&&<div className="mobile-timeline">{timeline}</div>}
  </article>;
 }
