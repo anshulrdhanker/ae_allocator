@@ -38,7 +38,7 @@ export default function BenchmarkPage({data,line,time,reduced,children}){
   <div style={reveal(timing.footer)}>{children}</div>
   <p className="closing-thanks" aria-live="polite">
    <span aria-hidden="true"><SmoothWordStream tokens={closingWords} time={reduced?Infinity:time-timing.thanks} reduced={reduced}/></span>
-   <span className="sr-only">{(reduced||time>=timing.end)&&closingThanks}</span>
+   <span className="sr-only">{(reduced||time>=timing.thanksDone)&&closingThanks}</span>
   </p>
  </section>;
 }
