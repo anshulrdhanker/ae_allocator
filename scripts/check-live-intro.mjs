@@ -22,7 +22,7 @@ try{
     const presentation=document.querySelector('[data-playhead]'),time=Number(presentation.dataset.playhead);
     const group=presentation.dataset.beat==='intro_problem'?'first':'second';
     const words=[...document.querySelectorAll(`[data-intro-paragraph=${group}] .narrator-word`)];
-    rows.push({time,firstBottom:document.querySelector('[data-intro-paragraph=first]')?.getBoundingClientRect().bottom,chapter:presentation.dataset.beat,words:words.map(w=>{const r=w.getBoundingClientRect();return {x:r.x,y:r.y,height:r.height};}),visible:words.filter(w=>w.dataset.state!=='pending').length});
+    rows.push({time,headerBottom:document.querySelector('.app-header').getBoundingClientRect().bottom,firstOpacity:document.querySelector('[data-intro-paragraph=first]')?.style.opacity,firstBottom:document.querySelector('[data-intro-paragraph=first]')?.getBoundingClientRect().bottom,chapter:presentation.dataset.beat,words:words.map(w=>{const r=w.getBoundingClientRect();return {x:r.x,y:r.y,height:r.height};}),visible:words.filter(w=>w.dataset.state!=='pending').length});
     // Include the browser entrance and the original hold before the next chapter.
     if(time>=end)return resolve(rows);
     if(performance.now()-started>45000)return reject(new Error('Live playback did not advance'));
@@ -38,10 +38,11 @@ try{
     assert.ok(Math.abs(row.words[i].x-initial.words[i].x)<=1,'word shifted horizontally');
     assert.ok(Math.abs(row.words[i].y-initial.words[i].y)<=1,'word shifted vertically');
    }
-   assert.ok(Math.abs(initial.words[0].y-origin.y-(chapter==='intro_question'?origin.height/2:0))<=1,'second paragraph offset differs');
+   assert.ok(Math.abs(initial.words[0].y-origin.y-(chapter==='intro_question'&&width>700?origin.height/2:0))<=1,'second paragraph offset differs');
    assert.ok(Math.abs(initial.words[0].x-origin.x)<=1,'paragraph origins differ');
   }
-  assert.ok(samples.at(-1).firstBottom<0,'first paragraph clears viewport');
+  if(width<=700)assert.equal(samples.at(-1).firstOpacity,'0');
+  else assert.ok(samples.at(-1).firstBottom<0,'first paragraph clears viewport');
   assert.ok(samples.some(s=>s.time>=frameDone&&s.visible===s.words.length),'second paragraph holds after browser entrance');
   assert.equal((await response).status(),200);assert.deepEqual(errors,[]);
   await page.screenshot({path:`/tmp/live-stationary-intro-${width}.png`,fullPage:true});

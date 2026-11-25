@@ -851,17 +851,50 @@ strong, .route-chip, .policy-result, .capacity-usage { font-variant-numeric: tab
   .revenue-chart svg text { font-size: 12px }
   .chart-assignments { gap: 2px 9px }
   .simulation-outcome strong { font-size: 16px }
-  .transport { flex-wrap: wrap; justify-content: space-between; gap: 0; margin: 4px 0 0; padding-bottom: env(safe-area-inset-bottom); font-size: 12px }
-  .transport button, .transport label { min-height: 40px; padding-inline: 2px }
-  .transport label { gap: 2px }
-  .transport .speed-caption { display: none }
-  .transport .motion-toggle { margin: 0 }
-  .transport .playback-timeline { order: 1; flex-basis: 100%; gap: 8px }
-  .playback-timeline input { height: 32px }
   .benchmark-grid { padding: 0; gap: 18px 10px }
   .benchmark-grid figure { min-width: 0 }
   .benchmark-grid figcaption { text-wrap: balance }
   .benchmark-column { width: clamp(43px,13vw,60px) }
   .benchmark-result { margin: 12px 0 4px }
   .benchmark-page .closing-actions a, .benchmark-page .closing-actions button { padding: 10px }
+}
+
+@media (max-width: 700px) {
+  .routing-presentation { padding-top: env(safe-area-inset-top) }
+  .routing-presentation .app-header { position: static; justify-content: flex-end; margin-bottom: 22px }
+  .app-header > :not(.methodology-label) { display: none }
+  .app-header a.methodology-label { padding-right: 0; text-decoration: underline; text-decoration-color: #a9afa9; text-decoration-thickness: 1px; text-underline-offset: 3px }
+  .routing-presentation .narrator { transform: none; padding: 0; margin: 0 0 12px }
+  .presentation-slide .narrator { display: grid; clip-path: inset(0 0 -120px); }
+  .presentation-slide .narrator-copy, .narration-reserve { grid-area: 1 / 1; align-self: start }
+  .narration-reserve { display: grid; visibility: hidden; padding-bottom: 1lh; pointer-events: none }
+  .narration-reserve p { grid-area: 1/1; margin: 0 }
+  .routing-presentation .narrator:has(.intro-flow-first:not(.intro-flow-history)) { padding-bottom: 0 }
+  .transport, .model-appendix, .optimizer-entry .settings,
+  .routing-presentation:not([data-footer-ready]) + .resume-disclosure { display: none }
+  .static-navigation { display: flex; justify-content: space-between; margin-top: 12px }
+  .static-navigation button { padding: 12px 0; color: var(--muted) }
+  .browser-window { position: relative; overflow-anchor: none; --compact-body: 132px;
+    height: calc(38px + var(--compact-body) + var(--record-expand,0) * (max(var(--compact-body),var(--record-height,0px)) - var(--compact-body))) }
+  .record-sizes { position: absolute; inset: 0 0 auto; height: 0; overflow: hidden; visibility: hidden; pointer-events: none }
+  .browser-window button:disabled { opacity: 1; cursor: default }
+  .workbench-header strong { white-space: nowrap }
+  .workbench-header > span { flex: 0 0 auto; text-align: right }
+  .agent-workbench > .workbench-header > span { min-inline-size: 9em }
+  .workbench-metric { display: grid; grid-template-rows: 1fr auto }
+  .trace-row { color: #b8bbc4 }
+  .browser-window[data-view=allocation] .workspace-pane { height: calc(100% - 36px) }
+  .browser-window[data-view=allocation] :is(.product-content,[role=tabpanel],.allocation-screen,.allocation-screen .inbound-record,.allocation-workbench,.revenue-plots) { height: 100% }
+  .allocation-screen { padding: 0 10px }
+  .allocation-screen .compact-record, .allocation-workbench > :not(.revenue-plots),
+  .revenue-chart figcaption span, .chart-assignments { display: none }
+  .allocation-workbench { border: 0; background: transparent }
+  .revenue-plots { border: 0; grid-template-rows: repeat(2,minmax(0,1fr)) }
+  .revenue-chart { grid-template-rows: auto minmax(0,1fr); padding: 8px 0 4px; min-height: 0 }
+  .revenue-chart svg { display: block; width: 100%; height: 100%; max-height: none }
+  .benchmark-page { padding-top: 22px }
+  .benchmark-grid figure { display: grid; grid-template-rows: subgrid; grid-row: span 2; row-gap: 0 }
+  .benchmark-grid { row-gap: 16px }
+  .benchmark-grid figcaption { align-self: start }
+  .optimizer-entry { padding-bottom: calc(20px + env(safe-area-inset-bottom)) }
 }

@@ -1,5 +1,5 @@
 import {useMemo} from 'react';
-import {deriveTimelineState,narrationFor,narrationPlayback,ease,EVENTS,WORKSPACE_EXIT_MS} from './narrative.mjs';
+import {deriveTimelineState,narrationFor,narrationPlayback,benchmarkTiming,ease,EVENTS,WORKSPACE_EXIT_MS} from './narrative.mjs';
 import {arrivalLead,presentationSummary} from './selectors.mjs';
 import TextGenerationIntro from './TextGenerationIntro';
 import AgentWorkspace from './AgentWorkspace';
@@ -39,6 +39,9 @@ export default function PresentationDocument({data,controller,onParameters,busy=
  const previousLine=previousBeat?narrationFor({chapter:previousBeat.id},data,summary):null;
  const openingPhase=snapshot.chapter==='intro_problem'?'first':snapshot.chapter==='intro_question'?'second':previousBeat?.id==='intro_question'?'exit':null;
  const opening=openingPhase?{phase:openingPhase,handoffTime:state.time-snapshot.chapters[1].at,dock:snapshot.dock,first:narrationFor({chapter:'intro_problem'},data,summary),second:narrationFor({chapter:'intro_question'},data,summary)}:null;
+ const mobile=controller.mobile;
+ const reservedLines=useMemo(()=>mobile?snapshot.chapters.filter(b=>b.id!=='result').map(b=>narrationFor({chapter:b.id},data,summary).text):null,[mobile,data,summary]);
+ const footerReady=closing&&(reduced||current.local>=benchmarkTiming(line).footer);
  const profiles=(atEnd=false)=><nav className={atEnd?"closing-links":"app-header"} aria-label={atEnd?"Social profiles":"Methodology and social profiles"}>
    {!atEnd&&<><a className="methodology-label" href={verifyWithClaudeUrl} target="_blank" rel="noopener noreferrer">
      Verify with Claude
@@ -50,11 +53,15 @@ export default function PresentationDocument({data,controller,onParameters,busy=
    <span aria-hidden="true">|</span>
    <a href="https://x.com/anshul_dhanker" target="_blank" rel="noopener noreferrer">X</a>
   </nav>;
- return <article className="routing-presentation" data-beat={current.chapter} data-workspace-exiting={exiting||undefined} data-playhead={Math.round(state.time)} data-playing={state.playing&&!suspended} style={{'--dock':snapshot.dock}}>
+ return <article className="routing-presentation" data-footer-ready={footerReady||undefined} data-beat={current.chapter} data-workspace-exiting={exiting||undefined} data-playhead={Math.round(state.time)} data-playing={state.playing&&!suspended} style={{'--dock':snapshot.dock}}>
  {!closing&&<div className="presentation-slide" style={exiting?{display:'block',opacity:1-ease(current.local/WORKSPACE_EXIT_MS),transform:`translateY(${18*ease(current.local/WORKSPACE_EXIT_MS)}px)`}:undefined}>
  {profiles()}
- <TextGenerationIntro line={line} previousLine={previousLine} opening={opening} time={narration.local} reduced={reduced} showThinking={snapshot.chapter.startsWith('intro_')}/>
+ <TextGenerationIntro reservedLines={reservedLines} line={line} previousLine={previousLine} opening={opening} time={narration.local} reduced={reduced} showThinking={snapshot.chapter.startsWith('intro_')}/>
  <AgentWorkspace exiting={exiting} data={data} snapshot={snapshot} lead={lead} summary={summary} controller={controller} busy={busy} error={error}/>
+ {mobile&&reduced&&<nav className="static-navigation" aria-label="Read presentation steps">
+  <button disabled={current.chapter==='intro_problem'} onClick={()=>dispatch({type:'back'})}>Previous step</button>
+  <button disabled={!data} onClick={()=>dispatch({type:'next'})}>Next step</button>
+ </nav>}
  <nav className="transport" aria-label="Presentation playback"><button disabled={state.time===0} onClick={()=>dispatch({type:'back'})}>Back</button>{!reduced&&<button disabled={snapshot.done} onClick={()=>dispatch({type:'toggle'})}>{state.playing?'Pause':'Play'}</button>}<button disabled={snapshot.done||(!data&&snapshot.chapter!=='intro_problem')} onClick={()=>dispatch({type:'next'})}>Next</button>{!closing&&<button onClick={()=>dispatch({type:'replay',reduced})}>Replay</button>}<label><span className="speed-caption">Speed</span> <select aria-label="Playback speed" value={speed} disabled={reduced} onChange={e=>setSpeed(Number(e.target.value))}>{[.5,1,1.2,1.5,2].map(s=><option key={s} value={s}>{s}×</option>)}</select></label>
  <div className="playback-timeline">
   <div className="playback-track">
@@ -73,6 +80,6 @@ export default function PresentationDocument({data,controller,onParameters,busy=
      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 10a8 8 0 1 1 .8 6M4 4v6h6"/></svg>
    </button><span aria-hidden="true">|</span>{profiles(true)}</div>
  </BenchmarkPage>}
- {!isResult&&data&&snapshot.frame===1&&<ModelAppendix onParameters={onParameters} data={data} summary={summary} onInspect={()=>dispatch({type:'pause'})}/>}
+ {!mobile&&!isResult&&data&&snapshot.frame===1&&<ModelAppendix onParameters={onParameters} data={data} summary={summary} onInspect={()=>dispatch({type:'pause'})}/>}
  </article>;
 }

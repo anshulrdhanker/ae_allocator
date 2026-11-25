@@ -3,6 +3,7 @@ export const initialPlayback=()=>({time:0,playing:true,selectedId:null});
 export function playbackReducer(state,action){const chapters=action.chapters??BEATS,end=chapters.at(-1).end,b=beatAt(state.time,chapters),i=chapters.indexOf(b);switch(action.type){
  case 'tick':return !state.playing?state:{...state,resultFrom:b.id==='result'?state.resultFrom:undefined,time:Math.min(end,state.time+action.delta),playing:state.time+action.delta<end};
  case 'toggle':return state.time>=end?state:{...state,playing:!state.playing};
+ case 'resume':return state.time<end?{...state,playing:true}:state;
  case 'pause':return {...state,playing:false};
  case 'replay':return {...initialPlayback(),playing:!action.reduced};
  case 'reduce-motion':return {...state,time:b.complete,playing:false};

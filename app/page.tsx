@@ -42,6 +42,12 @@ export default function Home(){
   finally{if(!controller.signal.aborted)setBusy(false)}
  },[]);
  useEffect(()=>{run(defaults,{});return()=>request.current?.abort()},[run]);
+ useEffect(()=>{
+  if(controller.mobile){setSettings(false);if(resumeOpen){
+   const disclosure=document.querySelector<HTMLDetailsElement>('.resume-disclosure');
+   if(disclosure&&!disclosure.getClientRects().length)disclosure.open=false;
+  }}
+ },[controller.mobile,resumeOpen,state.time===0]);
  const original=data?.opportunities.find(l=>l.id===selectedId);
  const selected=edits[selectedId]??original;
  return <main className="optimizer-entry">

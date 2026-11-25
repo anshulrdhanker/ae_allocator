@@ -36,9 +36,9 @@ try {
     await seek(cue - 1);
     assert.equal(await compareButton.count(),0);
     await seek(cue);
-    assert.ok(await compareButton.isVisible());
+    assert.equal(await compareButton.isVisible(),width>700);
     await seek(cohort.at);
-    assert.ok(await compareButton.isVisible());
+    assert.equal(await compareButton.isVisible(),width>700);
     const partial = await totals.allTextContents();
     const shown = comparisonFrame({chapters,time:cohort.at},1000).shown;
     assert.match(await page.locator('.comparison-progress').innerText(), new RegExp(shown + ' / 1,000'));
@@ -72,10 +72,18 @@ try {
     await seek(result.complete);
     assert.equal(await page.locator('.benchmark-grid figure:visible').count(),4);
     await seek(cohort.complete);
-    await page.getByRole('tab',{name:'Results'}).click();
-    await page.getByRole('button',{name:'Replay presentation'}).waitFor();
-    await page.waitForSelector('[data-playing=false]');
-    assert.ok(await workspace.isHidden());
+    if(width<=700){
+      assert.ok(await page.getByRole('tab',{name:'Results'}).isDisabled());
+      await seek(result.complete);
+      await page.getByRole('button',{name:'Replay presentation'}).click();
+      await page.waitForSelector('[data-playing=true]');
+      await page.getByLabel('Checkpoint').selectOption({label:'cohort_allocation'},{force:true});
+    }else{
+      await page.getByRole('tab',{name:'Results'}).click();
+      await page.getByRole('button',{name:'Replay presentation'}).waitFor();
+      await page.waitForSelector('[data-playing=false]');
+      assert.ok(await workspace.isHidden());
+    }
     await seek(cohort.at);
     assert.deepEqual(await totals.allTextContents(),partial);
   }

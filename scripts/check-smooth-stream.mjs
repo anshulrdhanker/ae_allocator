@@ -23,14 +23,15 @@ try{
   const seek=async time=>{await page.getByRole('spinbutton',{name:'Time (ms)'}).fill(String(Math.round(time)));await page.waitForFunction(t=>Number(document.querySelector('[data-playhead]').dataset.playhead)===t,Math.round(time));};
   const fields=modelInputFields(arrivalLead(data),operation);
   const field=fields[0];
-  const value=page.locator('[data-input="'+field.key+'"] .input-value-slot > span:last-child');
+  const value=page.locator('[role=tabpanel] [data-input="'+field.key+'"] .input-value-slot > span:last-child');
   await seek(absolute(field.commitAt-1));
   const initial=await value.boundingBox();
   for(const offset of [0,40,110,240,449,500,110]){
    const time=Math.round(absolute(field.commitAt)+offset);
    await seek(time);
    const opacity=await value.evaluate(n=>Number(getComputedStyle(n).opacity));
-   const expected=Math.min(1,Math.max(0,(time-absolute(field.commitAt))/ESTIMATE_REVEAL_MS));
+   const phase=Math.min(1,Math.max(0,(time-absolute(field.commitAt))/(width<=700?720:ESTIMATE_REVEAL_MS)));
+   const expected=width<=700?phase*phase*(3-2*phase):phase;
    assert.ok(Math.abs(opacity-expected)<.001);
    assert.deepEqual(await value.boundingBox(),initial);
   }
@@ -38,7 +39,8 @@ try{
   assert.equal(await value.getAttribute('style'),paused);
   const economics=chapters.find(b=>b.id==='lead_economics');await seek(absolute(E.selfEV+CALCULATION_DELAY+55,economics));
   assert.ok(Math.abs(Number(await page.locator('.stream-value .smooth-stream-word').first().evaluate(n=>getComputedStyle(n).opacity))-.5)<.001);
-  await page.getByRole('checkbox',{name:'Static steps'}).check();
+  if(width<=700)await page.getByLabel('OS motion (test)').selectOption('reduce');
+  else await page.getByRole('checkbox',{name:'Static steps'}).check();
   assert.equal(Number(await page.locator('.stream-value .smooth-stream-word').first().evaluate(n=>getComputedStyle(n).opacity)),1);
   assert.deepEqual(errors,[]);console.log(`${width}px: input reveal timing, stable value slot, pause, seeking, streamed economics and static steps passed`);
   await page.close();

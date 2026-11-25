@@ -25,11 +25,11 @@ try{
   for(const [i,b] of chapters.slice(0,2).entries()){
    const line=narrationFor({chapter:b.id},data),tokens=narrationTokens(line.text,line.at,line.rate,line.focal);
    await seek(b.at+line.at);const reference=await geometry();
-   near((i?reference.second:reference.first).x,original.first.x,'shared X origin');near((i?reference.second:reference.first).y,original.first.y+(i?original.words[0].height/2:0),'deliberate half-line second offset');
+   near((i?reference.second:reference.first).x,original.first.x,'shared X origin');near((i?reference.second:reference.first).y,original.first.y+(i&&width>700?original.words[0].height/2:0),'deliberate half-line second offset');
    for(const local of [...tokens.map(t=>t.start+1),line.at+line.duration+1]){
     await seek(b.at+local);const current=await geometry();
     current.words.forEach((word,index)=>{near(word.x,reference.words[index].x,'fixed word X');near(word.y,reference.words[index].y,'fixed word Y');});
-    assert.equal(current.firstOpacity,'1');near(current.frame.y,reference.frame.y,'stable browser during generation');
+    assert.equal(current.firstOpacity,i&&width<=700?'0':'1');near(current.frame.y,reference.frame.y,'stable browser during generation');
     if(i)assert.ok(current.first.bottom<current.second.y,'paragraphs do not overlap');
     const active=tokens.findIndex(t=>t.candidates.length&&local>=t.start&&local<t.end);
     if(active>=0){const word=current.words[(i?reference.words.length-tokens.length:0)+active],compact=word.bottom-current.root.y+108*current.scale>current.root.height;assert.ok(current.overlay);near(current.overlay.y,word.bottom+(compact?4:8)*current.scale,'candidate anchor');}
@@ -37,7 +37,7 @@ try{
   }
   let lastY=original.first.y;
   for(const elapsed of [0,1,75,150,225,300,INTRO_LIFT_MS-1,INTRO_LIFT_MS,INTRO_LIFT_MS+1]){
-   await seek(chapters[1].at-450-(INTRO_LIFT_MS-NARRATION_EXIT)+elapsed);const g=await geometry();assert.ok(g.first.y<=lastY+.01);lastY=g.first.y;assert.equal(g.firstOpacity,'1');
+   await seek(chapters[1].at-450-(INTRO_LIFT_MS-NARRATION_EXIT)+elapsed);const g=await geometry();assert.ok(g.first.y<=lastY+.01);lastY=g.first.y;if(width>700)assert.equal(g.firstOpacity,'1');else assert.ok(Number(g.firstOpacity)<=1);
   }
   const dockAt=chapters[1].at+chapters[1].delay+EVENTS.dock-chapters[1].storyAt;
   await seek(dockAt);const beforeDock=await geometry();
@@ -56,14 +56,14 @@ try{
   await seek(chapters[1].end+550);assert.equal(await page.locator('.narrator-previous').evaluate(n=>getComputedStyle(n).visibility),'hidden');
   assert.equal(await page.locator('.browser-window').evaluate(n=>getComputedStyle(n).visibility),'visible','browser remains visible across chapter boundary');
   await seek(chapters[1].at-1);const beforeBoundary=await geometry();await seek(chapters[1].at);near((await geometry()).first.y,beforeBoundary.first.y,'continuous chapter boundary');
-  for(const delta of [1,100,350,INTRO_DOCK_MS-1,INTRO_DOCK_MS]){await seek(dockAt+delta);const g=await geometry();assert.ok(g.second.y<beforeDock.second.y);assert.ok(g.first.y<beforeDock.first.y);if(delta===1)near(g.second.y,beforeDock.second.y,'continuous dock start');if(delta===INTRO_DOCK_MS){assert.ok(g.first.bottom<0,'first paragraph entirely offscreen');near(g.second.y,g.root.y+g.scale*g.lineHeight/2,'second paragraph lands at settled two-line baseline');}}
+  for(const delta of [1,100,350,INTRO_DOCK_MS-1,INTRO_DOCK_MS]){await seek(dockAt+delta);const g=await geometry();if(width<=700){near(g.second.y,beforeDock.second.y,'stable mobile header gap');assert.equal(g.firstOpacity,'0');continue;}assert.ok(g.second.y<beforeDock.second.y);assert.ok(g.first.y<beforeDock.first.y);if(delta===1)near(g.second.y,beforeDock.second.y,'continuous dock start');if(delta===INTRO_DOCK_MS){assert.ok(g.first.bottom<0,'first paragraph entirely offscreen');near(g.second.y,g.root.y+g.scale*g.lineHeight/2,'second paragraph lands at settled two-line baseline');}}
   // Completed intro transitions out with the same fade before the next narration.
   await seek(chapters[1].end-1);const end=await geometry();await seek(chapters[1].end);const exit=await geometry();near(exit.first.y,end.first.y,'continuous intro exit');
   await seek(chapters[1].at-450-(INTRO_LIFT_MS-NARRATION_EXIT)+190);const paused=await geometry();await page.waitForTimeout(120);assert.deepEqual(await geometry(),paused);
   await seek(chapters[1].at-450-(INTRO_LIFT_MS-NARRATION_EXIT)+190);assert.deepEqual(await geometry(),paused);
-  await seek(chapters[1].at+190);await page.getByRole('checkbox',{name:'Static steps'}).check();const reduced=await geometry();assert.ok(reduced.first.bottom<reduced.second.y);assert.equal(await page.locator('.intro-selection').count(),0);
-  await page.getByRole('button',{name:'Replay',exact:true}).click();near((await geometry()).first.y,original.first.y,'replay anchor');
-  await page.getByRole('checkbox',{name:'Static steps'}).uncheck();await seek(13000);await page.screenshot({path:`/tmp/intro-flow-${width}.png`,fullPage:true});
+  await seek(chapters[1].at+190);if(width<=700)await page.getByLabel('OS motion (test)').selectOption('reduce',{force:true});else await page.getByRole('checkbox',{name:'Static steps'}).check();const reduced=await geometry();assert.ok(reduced.first.bottom<reduced.second.y);assert.equal(await page.locator('.intro-selection').count(),0);
+  if(width<=700)await page.getByRole('button',{name:'Previous step'}).click();else await page.getByRole('button',{name:'Replay',exact:true}).click();near((await geometry()).first.y,original.first.y,'replay anchor');
+  if(width<=700)await page.getByLabel('OS motion (test)').selectOption('system',{force:true});else await page.getByRole('checkbox',{name:'Static steps'}).uncheck();await seek(13000);await page.screenshot({path:`/tmp/intro-flow-${width}.png`,fullPage:true});
   await seek(frameDoneAt+500);await page.screenshot({path:`/tmp/intro-clean-exit-${width}.png`,fullPage:true});
   console.log(`${width}px: stationary generation, wider spacing, 1310ms breathing room, clean first exit, extended reading hold, pause/seek/replay/static steps passed`);
  }

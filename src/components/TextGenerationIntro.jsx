@@ -3,7 +3,7 @@ import {useMemo,useRef,useLayoutEffect,useState} from 'react';
 import {narrationTokens,tokenPhase,NARRATION_EXIT,INTRO_LIFT_MS} from './intro.mjs';
 import {ease,progress} from './narrative.mjs';
 
-export default function TextGenerationIntro({line,previousLine,opening=null,closing=false,time,reduced,showThinking=true}){
+export default function TextGenerationIntro({line,reservedLines=null,previousLine,opening=null,closing=false,time,reduced,showThinking=true}){
  const root=useRef(null),active=useRef(null),[position,setPosition]=useState({left:0,top:0,width:184,compact:false});
  const firstCopy=useRef(null),[geometry,setGeometry]=useState({lift:0,gap:0,exitDistance:0});
  const tokens=useMemo(()=>narrationTokens(line.text,line.at,line.rate,line.focal,line.steady),[line.text,line.at,line.rate,line.steady,String(line.focal)]);
@@ -25,12 +25,13 @@ export default function TextGenerationIntro({line,previousLine,opening=null,clos
    // Untransformed page origin: enough extra travel to clear the entire first
    // paragraph above the viewport when docking finishes, at any breakpoint.
    const bounds=root.current.getBoundingClientRect(),scale=bounds.width/root.current.offsetWidth;
-   const exitDistance=Math.max(0,(bounds.top+window.scrollY)/scale-dockOffset);
+   const exitDistance=reservedLines?0:Math.max(0,(bounds.top+window.scrollY)/scale-dockOffset);
    setGeometry({lift:firstCopy.current.getBoundingClientRect().height/scale+gap,gap,exitDistance});
   };
   measure();const observer=new ResizeObserver(measure);observer.observe(firstCopy.current);
   return()=>observer.disconnect();
- },[opening?.phase,opening?.first.text]);
+ },[opening?.phase,opening?.first.text,reservedLines]);
+ const reserve=useMemo(()=>reservedLines&&<div className="narration-reserve" aria-hidden="true">{reservedLines.map(text=><p key={text}>{text.split(' ').map((word,i)=><span key={i}><span className="narrator-word">{word}</span>{' '}</span>)}</p>)}</div>,[reservedLines]);
  const current=reduced||!showThinking?null:tokens.find(t=>t.candidates.length&&time>=t.start&&time<t.end);
  const wordPhase=token=>tokenPhase(token,time,reduced,showThinking);
  const exitDuration=opening?.phase==='exit'?550:NARRATION_EXIT;
@@ -39,9 +40,9 @@ export default function TextGenerationIntro({line,previousLine,opening=null,clos
  // Use the existing end-of-paragraph hold for a gentler lift, keeping its end
  // and the breathing room before the next word cue unchanged.
  const handoff=progress(opening?.handoffTime??0,-450-(INTRO_LIFT_MS-NARRATION_EXIT),INTRO_LIFT_MS);
- const liftProgress=opening?.phase==='exit'?1:reduced?Number(handoff>0):handoff*handoff*(3-2*handoff);
+ const liftProgress=opening?.phase==='exit'?1:reduced?(reservedLines?Number(opening?.phase==='second'):Number(handoff>0)):handoff*handoff*(3-2*handoff);
  // The settled two-line workspace narration sits half a line below its origin.
- const secondOffset=geometry.gap*(reduced?1-(opening?.dock??0):1);
+ const secondOffset=(reservedLines?0:geometry.gap)*(reduced?1-(opening?.dock??0):1);
  const streamingCopy=useRef(null);
  const [wraps,setWraps]=useState([]);
  useLayoutEffect(()=>{
@@ -89,8 +90,9 @@ export default function TextGenerationIntro({line,previousLine,opening=null,clos
  const workspaceNarration=!closing&&opening?.phase!=='first'&&opening?.phase!=='second';
  const streamingWords=workspaceNarration?<span ref={streamingCopy} style={{display:'block',position:'relative',transform:`translateY(${reduced?"0px":`calc(1lh - ${wrapOffset}px)`})`}}>{words}</span>:words;
  return <section className="narrator" data-plain-narration={!showThinking || undefined} aria-label="Narrator" ref={root} data-narration-state={exiting?'clearing':!reduced&&time<line.at?'blank':!reduced&&time<line.at+line.duration?'streaming':'complete'}>
+  {reserve}
   <div className="narrator-copy" aria-hidden="true">
-   {opening&&<p ref={firstCopy} data-intro-paragraph="first" className={'intro-flow-first'+(opening.phase==='exit'?' intro-flow-history':'')} style={{visibility:opening.phase==='exit'&&!exiting?'hidden':'visible',opacity:opening.phase==='exit'?1-exitProgress:1,transform:`translateY(${-geometry.lift*liftProgress-geometry.exitDistance*opening.dock-(opening.phase==='exit'?5*exitProgress:0)}px)`}}>{opening.phase==='first'?streamingWords:renderWords(firstTokens,Infinity)}</p>}
+   {opening&&<p ref={firstCopy} data-intro-paragraph="first" className={'intro-flow-first'+(opening.phase==='exit'?' intro-flow-history':'')} style={{visibility:opening.phase==='exit'&&!exiting?'hidden':'visible',opacity:reservedLines?1-liftProgress:opening.phase==='exit'?1-exitProgress:1,transform:`translateY(${-geometry.lift*liftProgress-geometry.exitDistance*opening.dock-(opening.phase==='exit'?5*exitProgress:0)}px)`}}>{opening.phase==='first'?streamingWords:renderWords(firstTokens,Infinity)}</p>}
    {opening?.phase==='first'&&<p className="intro-flow-measure">{renderWords(secondTokens,-Infinity)}</p>}
    {opening?.phase!=='first'&&<p data-intro-paragraph={opening?.phase==='second'?'second':undefined} style={opening?.phase==='second'?{transform:`translateY(${secondOffset}px)`}:undefined}>{streamingWords}</p>}
    {previousLine&&opening?.phase!=='second'&&<p className="narrator-previous" style={{visibility:exiting?'visible':'hidden',opacity:1-exitProgress,transform:`translateY(calc(${opening?.phase==='exit'?secondOffset+'px':workspaceNarration&&!opening?outgoingOffset:"0px"} - ${5*exitProgress}px))`}}>{previousLine.text}</p>}

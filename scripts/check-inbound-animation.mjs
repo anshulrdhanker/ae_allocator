@@ -16,14 +16,23 @@ try{
   await page.setViewportSize({width,height:1100});await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.addStyleTag({content:'.qa-toolbar{position:fixed!important;opacity:0;pointer-events:none}'});
   await seek(E.arrival-1);
-  assert.equal(await page.locator('.arrival-slot').count(),0);
+  assert.equal(await page.locator('[role=tabpanel] .arrival-slot').count(),0);
   await seek(E.arrival+200);
-  assert.ok(await page.locator('.arrival-slot [data-lead-id="'+lead.id+'"]').isVisible());
+  assert.ok(await page.locator('[role=tabpanel] .arrival-slot [data-lead-id="'+lead.id+'"]').isVisible());
   await seek(E.openRecord+100);
-  assert.ok(await page.locator('.compact-record h2').isVisible());
-  if(width<=700)assert.ok(await page.locator('.recent-leads').isHidden());
+  assert.ok(await page.locator('[role=tabpanel] .compact-record h2').isVisible());
+  if(width<=700)assert.ok(await page.locator('[role=tabpanel] .recent-leads').isHidden());
+  let settledFrame;
+  if(width<=700){
+   const frame=page.locator('.browser-window');
+   await seek(E.openRecord);const compact=await frame.boundingBox();
+   await seek(E.openRecord+400);const growing=await frame.boundingBox();
+   await seek(E.openRecord+800);settledFrame=await frame.boundingBox();
+   assert.ok(compact.height<growing.height&&growing.height<settledFrame.height);
+   assert.equal(compact.y,settledFrame.y);
+  }
   const fields=modelInputFields(lead,op);
-  const metric=key=>page.locator('[data-input="'+key+'"]');
+  const metric=key=>page.locator('[role=tabpanel] [data-input="'+key+'"]');
   for(const field of fields){
    await seek(field.commitAt-2);
    assert.equal(await metric(field.key).getAttribute('data-applied'),'false');
@@ -31,13 +40,14 @@ try{
    assert.equal(await metric(field.key).getAttribute('data-applied'),'true');
    assert.ok((await metric(field.key).innerText()).includes(field.value));
   }
-  await seek(op.committedAt+ESTIMATE_REVEAL_MS+10);
-  assert.equal(await page.locator('.workbench-metric[data-applied=true]').count(),6);
-  assert.equal(await page.locator('.agent-workbench').getAttribute('data-agent-phase'),'complete');
+  await seek(op.committedAt+(width<=700?720:ESTIMATE_REVEAL_MS)+10);
+  assert.equal(await page.locator('[role=tabpanel] .workbench-metric[data-applied=true]').count(),6);
+  assert.equal(await page.locator('[role=tabpanel] .agent-workbench').getAttribute('data-agent-phase'),'complete');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.getByLabel('Checkpoint').selectOption({label:'lead_economics'},{force:true});
-  assert.ok(await page.locator('.workbench-metrics').isHidden());
+  assert.ok(await page.locator('[role=tabpanel] .workbench-metrics').isHidden());
   assert.ok(await page.getByRole('button',{name:'Routing to AE via Slack'}).isVisible());
+  if(settledFrame)assert.deepEqual(await page.locator('.browser-window').boundingBox(),settledFrame);
   console.log(`${width}px: arrival, six timed input reveals, completion and economics handoff passed`);
  }
  assert.deepEqual(errors,[]);
