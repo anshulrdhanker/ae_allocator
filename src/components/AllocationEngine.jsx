@@ -12,7 +12,7 @@ const compactDollars = new Intl.NumberFormat('en-US', {
 
 function RevenueChart({title, description, series, baseline, ceiling, shown, position, total, mobile}) {
   const clipId = useId();
-  const svg=useRef(null);
+  const plotSlot=useRef(null);
   const [size,setSize]=useState({width:310,height:120});
   useLayoutEffect(()=>{
     if(!mobile)return;
@@ -20,40 +20,52 @@ function RevenueChart({title, description, series, baseline, ceiling, shown, pos
       const {width,height}=entry.contentRect;
       if(width>0&&height>0)setSize({width,height});
     });
-    observer.observe(svg.current);
+    observer.observe(plotSlot.current);
     return ()=>observer.disconnect();
   },[mobile]);
   const {width,height}=mobile?size:{width:310,height:120};
-  const plot={left:38,right:width-8,top:9,bottom:height-24};
+  const plot=mobile?{left:3,right:width-3,top:3,bottom:height-3}:{left:38,right:width-8,top:9,bottom:height-24};
   const x = i => plot.left + (plot.right - plot.left) * i / Math.max(1, total);
   const y = value => plot.bottom - (plot.bottom - plot.top) * value / ceiling;
   const paths = useMemo(() => {
     const path = values => values.map((value, i) =>
       (i ? 'L' : 'M') + x(i).toFixed(2) + ',' + y(value).toFixed(2)).join(' ');
     return {line: path(series.revenue), reference: baseline && path(baseline.revenue)};
-  }, [series, baseline, ceiling, total,width,height]);
+  }, [series, baseline, ceiling, total,width,height,mobile]);
   const value = series.revenue[shown];
   const nextValue = series.revenue[Math.min(shown + 1, total)];
   const tip = value + (nextValue - value) * (position - shown);
-  return <figure className="revenue-chart">
-    <figcaption><strong>{title}</strong><span>{description}</span></figcaption>
-    <div className="chart-value">{money(value)}</div>
-    <svg ref={svg} viewBox={`0 0 ${width} ${height}`} role="img"
+  const graph=<svg viewBox={`0 0 ${width} ${height}`} role="img"
       aria-label={title + ', cumulative expected annual revenue at ' + shown + ' leads: ' + money(value)}>
-      <defs><clipPath id={clipId}><rect x={plot.left} y="0" width={x(position) - plot.left} height={height-20}/></clipPath></defs>
+      <defs><clipPath id={clipId}><rect x={plot.left} y="0" width={x(position) - plot.left} height={mobile?height:height-20}/></clipPath></defs>
       {[0, .5, 1].map(tick => <g key={tick}>
         <line className="chart-grid" x1={plot.left} x2={plot.right} y1={y(tick * ceiling)} y2={y(tick * ceiling)}/>
-        <text x={plot.left - 5} y={y(tick * ceiling) + 3} textAnchor="end">{compactDollars.format(tick * ceiling)}</text>
+        {!mobile&&<text x={plot.left - 5} y={y(tick * ceiling) + 3} textAnchor="end">{compactDollars.format(tick * ceiling)}</text>}
       </g>)}
       <g clipPath={'url(#' + clipId + ')'}>
         {baseline && <path className="chart-reference" d={paths.reference}/>}
         <path className="chart-line" d={paths.line}/>
       </g>
       {position > 0 && <circle cx={x(position)} cy={y(tip)} r="3" fill="currentColor"/>}
-      <text x={plot.left} y={height-7}>0</text>
+      {!mobile&&<><text x={plot.left} y={height-7}>0</text>
       <text x={(plot.left + plot.right) / 2} y={height-7} textAnchor="middle">Leads compared</text>
-      {total > 0 && <text x={plot.right} y={height-7} textAnchor="end">{number(total)}</text>}
-    </svg>
+      {total > 0 && <text x={plot.right} y={height-7} textAnchor="end">{number(total)}</text>}</>}
+    </svg>;
+  const heading=<>
+    <figcaption><strong>{title}</strong><span>{description}</span></figcaption>
+    <div className="chart-value">{money(value)}</div>
+  </>;
+  return <figure className="revenue-chart">
+    {mobile?<div className="chart-heading">{heading}</div>:heading}
+    {mobile?<div className="phone-chart">
+      <div className="chart-y-labels" aria-hidden="true">
+        {[1,.5,0].map(tick=><span key={tick}>{compactDollars.format(tick*ceiling)}</span>)}
+      </div>
+      <div className="chart-plot-slot" ref={plotSlot}>{graph}</div>
+      <div className="chart-x-labels" aria-hidden="true">
+        <span>0</span><span>Leads compared</span><span>{total>0?number(total):''}</span>
+      </div>
+    </div>:graph}
     <div className="chart-assignments"><span>AE-assisted <b>{number(series.assisted[shown])}</b></span>
       <span>Self-service <b>{number(shown - series.assisted[shown])}</b></span>
       {baseline && <span className="reference-key">Baseline</span>}</div>

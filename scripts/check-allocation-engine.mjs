@@ -5,6 +5,33 @@ import {chaptersFor, EVENTS, WORKSPACE_EXIT_MS} from '../src/components/narrativ
 import {comparisonFrame} from '../src/components/allocation-engine.mjs';
 import {money} from '../src/components/economics.mjs';
 
+function measurePhoneCharts() {
+  const rect = element => element.getBoundingClientRect();
+  return [...document.querySelectorAll('.revenue-chart')].map(figure => {
+    const box = rect(figure);
+    const svg = figure.querySelector('svg');
+    const plot = rect(svg);
+    const title = rect(figure.querySelector('figcaption'));
+    const value = rect(figure.querySelector('.chart-value'));
+    const labels = selector => [...figure.querySelectorAll(selector)].map(el => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      return range.getBoundingClientRect();
+    });
+    const y = labels('.chart-y-labels span');
+    const x = labels('.chart-x-labels span');
+    return {
+      headerClearance: y[0].top - Math.max(title.bottom,value.bottom),
+      bottomClearance: box.bottom - Math.max(...x.map(r=>r.bottom)),
+      tickClearance: Math.min(y[1].top-y[0].bottom,y[2].top-y[1].bottom),
+      xClearance: Math.min(x[1].left-x[0].right,x[2].left-x[1].right),
+      axisClearance: Math.min(...x.map(r=>r.top)) - y[2].bottom,
+      heightError: Math.abs(plot.height-svg.viewBox.baseVal.height),
+      plotHeight: plot.height
+    };
+  });
+}
+
 const fixtures = JSON.parse(await fs.readFile('tests/fixtures.json'));
 const browser = await chromium.launch();
 try {
@@ -66,7 +93,22 @@ try {
       }));
       assert.ok(fit.plotBottom <= fit.pane && fit.controls <= height, JSON.stringify({width,fit}));
     }
-    if (width <= 700) assert.ok(boxes[1].top >= boxes[0].bottom);
+    if (width <= 700) {
+      assert.ok(boxes[1].top >= boxes[0].bottom);
+      for(const scale of [1,1.5,2]){
+        const style=await page.addStyleTag({content:`
+          .phone-chart, .revenue-chart figcaption strong { font-size: ${12*scale}px }
+          .chart-value { font-size: ${17*scale}px }`});
+        await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+        for(const fit of await page.evaluate(measurePhoneCharts)){
+          for(const key of ['headerClearance','bottomClearance','tickClearance','xClearance','axisClearance','plotHeight']){
+            assert.ok(fit[key]>0,`${width}px at ${scale}×: ${key} = ${fit[key]}`);
+          }
+          assert.ok(fit.heightError<1);
+        }
+        await style.evaluate(el=>el.remove());
+      }
+    }
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth));
     const result = chapters.at(-1);
     const workspace = page.locator('.browser-window');

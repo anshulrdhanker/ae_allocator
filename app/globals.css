@@ -889,15 +889,34 @@ strong, .route-chip, .policy-result, .capacity-usage { font-variant-numeric: tab
   .agent-workbench > .workbench-header > span { min-inline-size: 9em }
   .workbench-metric { display: grid; grid-template-rows: 1fr auto }
   .trace-row { color: #b8bbc4 }
-  .browser-window[data-view=allocation] .workspace-pane { height: calc(100% - 36px) }
-  .browser-window[data-view=allocation] :is(.product-content,[role=tabpanel],.allocation-screen,.allocation-screen .inbound-record,.allocation-workbench,.revenue-plots) { height: 100% }
+  .browser-window[data-view=allocation] {
+    display: grid; grid-template: auto minmax(0,1fr) / minmax(0,1fr); gap: 0;
+  }
+  .browser-window[data-view=allocation] :is(.workspace-pane,.product-content,#view-allocation,
+      .allocation-screen,.allocation-screen > .inbound-record,.allocation-workbench) {
+    display: grid; grid-template: minmax(0,1fr) / minmax(0,1fr); min-height: 0; min-width: 0;
+  }
   .allocation-screen { padding: 0 10px }
   .allocation-screen .compact-record, .allocation-workbench > :not(.revenue-plots),
   .revenue-chart figcaption span, .chart-assignments { display: none }
   .allocation-workbench { border: 0; background: transparent }
-  .revenue-plots { border: 0; grid-template-rows: repeat(2,minmax(0,1fr)) }
-  .revenue-chart { grid-template-rows: auto minmax(0,1fr); padding: 8px 0 4px; min-height: 0 }
-  .revenue-chart svg { display: block; width: 100%; height: 100%; max-height: none }
+  .revenue-plots { border: 0; min-height: 0; overflow-y: auto; grid-template-rows: repeat(2,minmax(min-content,1fr)) }
+  .revenue-chart { grid-template-rows: auto minmax(min-content,1fr); padding: 8px 0 }
+  .chart-heading { grid-column: 1/-1; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; column-gap: 4px }
+  .chart-heading .chart-value { margin-left: auto }
+  .phone-chart {
+    grid-column: 1/-1; align-self: stretch; display: grid; min-height: 0;
+    /* Keep three tick labels readable when the plot gives up height. */
+    grid-template: minmax(3.9em,1fr) auto / max-content minmax(0,1fr);
+    gap: 4px 5px; color: #afb2bc; font-size: 12px; line-height: 1.3;
+  }
+  .chart-y-labels { display: flex; flex-direction: column; justify-content: space-between; text-align: right }
+  /* The SVG adds its own 3px dot radius inside each end of the plot. */
+  .chart-plot-slot { position: relative; min-height: 0; margin-block: max(0px, calc(.65em - 3px)) }
+  .chart-plot-slot svg { position: absolute; inset: 0; width: 100%; height: 100%; max-height: none; overflow: hidden }
+  .chart-x-labels { grid-column: 2; display: flex; justify-content: space-between; gap: 4px; padding-inline: 3px; text-align: center }
+  .chart-x-labels > :first-child { text-align: left }
+  .chart-x-labels > :last-child { text-align: right }
   .benchmark-page { padding-top: 22px }
   .benchmark-grid figure { display: grid; grid-template-rows: subgrid; grid-row: span 2; row-gap: 0 }
   .benchmark-grid { row-gap: 16px }
