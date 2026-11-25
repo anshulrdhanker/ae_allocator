@@ -41,7 +41,7 @@ export default function PresentationDocument({data,controller,onParameters,busy=
  const opening=openingPhase?{phase:openingPhase,handoffTime:state.time-snapshot.chapters[1].at,dock:snapshot.dock,first:narrationFor({chapter:'intro_problem'},data,summary),second:narrationFor({chapter:'intro_question'},data,summary)}:null;
  const mobile=controller.mobile;
  const reservedLines=useMemo(()=>mobile?snapshot.chapters.filter(b=>b.id!=='result').map(b=>narrationFor({chapter:b.id},data,summary).text):null,[mobile,data,summary]);
- const footerReady=closing&&(reduced||current.local>=benchmarkTiming(line).footer);
+ const footerReady=closing&&(reduced||current.local>=benchmarkTiming(line).end);
  const profiles=(atEnd=false)=><nav className={atEnd?"closing-links":"app-header"} aria-label={atEnd?"Social profiles":"Methodology and social profiles"}>
    {!atEnd&&<><a className="methodology-label" href={verifyWithClaudeUrl} target="_blank" rel="noopener noreferrer">
      {mobile?'Verify method on Claude':'Verify with Claude'}

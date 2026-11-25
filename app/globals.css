@@ -921,3 +921,5 @@ strong, .route-chip, .policy-result, .capacity-usage { font-variant-numeric: tab
   .benchmark-result { margin: 24px 0 8px }
   .resume-disclosure { scroll-margin-top: calc(env(safe-area-inset-top) + 14px) }
 }
+
+.benchmark-page .closing-thanks { margin: 12px 0 0; text-align: center; font-size: 15px; line-height: 1.5 }

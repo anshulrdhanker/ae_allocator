@@ -36,12 +36,13 @@ const NARRATION_LEAD_IN_MS=550;
 export const NAV_HANDOFF_MS=3200;
 export const WORKSPACE_EXIT_MS=650;
 const BENCHMARK_INTRO_AT=WORKSPACE_EXIT_MS+NARRATION_LEAD_IN_MS;
+export const closingThanks='Thanks so much for taking the time!';
+export const closingWords=readingTokens(closingThanks);
+export const BENCHMARK_FADE_MS=400;
 export function benchmarkTiming(line){
- const firstCard=line.at+line.duration+350;
- const cards=Array.from({length:4},(_,i)=>firstCard+i*330);
- const conclusion=cards[3]+550;
- const footer=conclusion+500;
- return {cards,conclusion,footer,end:Math.ceil(footer+400)};
+ const results=line.at+line.duration+350;
+ const thanks=results+BENCHMARK_FADE_MS+200;
+ return {results,thanks,end:Math.ceil(thanks+closingWords.at(-1).end)};
 }
 export const CALCULATION_DELAY=520,PAIR_ROUTE_STAGGER=500,COHORT_ROUTE_STAGGER=240;
 const firstAction={intro_question:EVENTS.dock,inbound_record:EVENTS.arrival,lead_economics:EVENTS.compare,shared_allocation:EVENTS.allocation,cohort_allocation:EVENTS.cohort,result:EVENTS.results};
