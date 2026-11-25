@@ -40,9 +40,12 @@ export const closingThanks='Thanks so much for taking the time!';
 export const closingWords=readingTokens(closingThanks);
 export const BENCHMARK_FADE_MS=400;
 export function benchmarkTiming(line){
- const results=line.at+line.duration+350;
- const thanks=results+BENCHMARK_FADE_MS+200;
- return {results,thanks,end:Math.ceil(thanks+closingWords.at(-1).end)};
+ const firstCard=line.at+line.duration+350;
+ const cards=Array.from({length:4},(_,i)=>firstCard+i*330);
+ const conclusion=cards[3]+550;
+ const footer=conclusion+500;
+ const thanks=footer+BENCHMARK_FADE_MS+200;
+ return {cards,conclusion,footer,thanks,end:Math.ceil(thanks+closingWords.at(-1).end)};
 }
 export const CALCULATION_DELAY=520,PAIR_ROUTE_STAGGER=500,COHORT_ROUTE_STAGGER=240;
 const firstAction={intro_question:EVENTS.dock,inbound_record:EVENTS.arrival,lead_economics:EVENTS.compare,shared_allocation:EVENTS.allocation,cohort_allocation:EVENTS.cohort,result:EVENTS.results};

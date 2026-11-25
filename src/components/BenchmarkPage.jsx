@@ -25,17 +25,17 @@ export default function BenchmarkPage({data,line,time,reduced,children}){
   :`MILP produced higher expected annual revenue in ${wins} of ${policies.length} comparisons.`;
  return <section className="benchmark-page" aria-label="Allocation benchmarks">
   <TextGenerationIntro line={line} time={time} reduced={reduced} showThinking={false}/>
-  <div className="benchmark-grid">{policies.map(policy=>{
+  <div className="benchmark-grid">{policies.map((policy,index)=>{
     const gain=policy.expected_revenue>0?100*(revenue/policy.expected_revenue-1):null;
-    return <figure key={policy.name} style={reveal(timing.results)}><figcaption><span className="strategy-name">{policy.name}</span><small>{descriptions[policy.name]}</small><strong>MILP {gain===null?'—':(gain>0?'+':'')+gain.toFixed(2)+'%'}</strong></figcaption>
+    return <figure key={policy.name} style={reveal(timing.cards[index])}><figcaption><span className="strategy-name">{policy.name}</span><small>{descriptions[policy.name]}</small><strong>MILP {gain===null?'—':(gain>0?'+':'')+gain.toFixed(2)+'%'}</strong></figcaption>
      <div className="benchmark-pair">{[['Heuristic',policy.expected_revenue],['MILP',revenue]].map(([name,value])=><div key={name}>
       <div className="benchmark-column"><b>{millions(value)}</b><i style={{height:(value/ceiling*100)+'%'}}/></div><small>{name}</small>
      </div>)}</div></figure>;
    })}</div>
-  <div className="benchmark-result" style={reveal(timing.results)}>
+  <div className="benchmark-result" style={reveal(timing.conclusion)}>
    <p>{conclusion}</p>
   </div>
-  <div style={reveal(timing.results)}>{children}</div>
+  <div style={reveal(timing.footer)}>{children}</div>
   <p className="closing-thanks" aria-live="polite">
    <span aria-hidden="true"><SmoothWordStream tokens={closingWords} time={reduced?Infinity:time-timing.thanks} reduced={reduced}/></span>
    <span className="sr-only">{(reduced||time>=timing.end)&&closingThanks}</span>
