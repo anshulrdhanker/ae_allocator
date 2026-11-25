@@ -31,13 +31,19 @@ export default function TextGenerationIntro({line,reservedLines=null,previousLin
    const exitDistance=reservedLines?0:Math.max(0,(bounds.top+window.scrollY)/scale-dockOffset);
    if(reservedLines&&secondCopy.current){
     const first=firstCopy.current.offsetHeight,second=secondCopy.current.offsetHeight;
-    setGeometry({first,second,gap,boundary:bounds.top+window.scrollY});
+    const header=root.current.previousElementSibling;
+    const topInset=parseFloat(getComputedStyle(root.current.closest('.routing-presentation')).paddingTop);
+    const boundary=topInset+header.offsetHeight+parseFloat(getComputedStyle(header).marginBottom);
+    setGeometry({first,second,gap,boundary,lift:0,exitDistance:0});
     return;
    }
    setGeometry({lift:firstCopy.current.getBoundingClientRect().height/scale+gap,gap,exitDistance});
   };
   measure();const observer=new ResizeObserver(measure);observer.observe(firstCopy.current);
-  if(reservedLines&&secondCopy.current)observer.observe(secondCopy.current);
+  if(reservedLines&&secondCopy.current){
+   observer.observe(secondCopy.current);
+   observer.observe(root.current.previousElementSibling);
+  }
   return()=>observer.disconnect();
  },[opening?.phase,opening?.first.text,reservedLines]);
  const reserve=useMemo(()=>reservedLines&&<div className="narration-reserve" aria-hidden="true">{reservedLines.map(text=><p key={text}>{text.split(' ').map((word,i)=><span key={i}><span className="narrator-word">{word}</span>{' '}</span>)}</p>)}</div>,[reservedLines]);
