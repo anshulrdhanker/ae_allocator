@@ -1,0 +1,10 @@
+{
+  "framework": "nextjs",
+  "functions": {
+    "api/simulate.py": {
+      "maxDuration": 60,
+      "includeFiles": "backend/**",
+      "excludeFiles": "{node_modules,.next,tests,artifacts}/**"
+    }
+  }
+}
