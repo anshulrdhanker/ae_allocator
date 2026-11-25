@@ -49,9 +49,7 @@ export default function TextGenerationIntro({line,reservedLines=null,previousLin
  },[opening?.phase,opening?.first.text,reservedLines]);
  const reserve=useMemo(()=>reservedLines&&<div className="narration-reserve" aria-hidden="true">{reservedLines.map(text=><p key={text}>{text.split(' ').map((word,i)=><span key={i}><span className="narrator-word">{word}</span>{' '}</span>)}</p>)}</div>,[reservedLines]);
  const current=reduced||!showThinking?null:tokens.find(t=>t.candidates.length&&time>=t.start&&time<t.end);
- // The intro playhead runs faster than the workspace. Keep the same visible word cadence.
- const wordTime=line.at+(time-line.at)/(line.wordClockScale??1);
- const wordPhase=token=>tokenPhase(token,wordTime,reduced,showThinking);
+ const wordPhase=token=>tokenPhase(token,time,reduced,showThinking);
  const exitDuration=opening?.phase==='exit'?550:NARRATION_EXIT;
  const exiting=!reduced&&previousLine&&opening?.phase!=='second'&&time<exitDuration;
  const exitProgress=ease(progress(time,0,exitDuration));

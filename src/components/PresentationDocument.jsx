@@ -35,12 +35,12 @@ export default function PresentationDocument({data,controller,onParameters,busy=
  const outgoing=useMemo(()=>exitFrom===null?null:deriveTimelineState(data,exitFrom,reduced,controller.mobile),[data,exitFrom,reduced,controller.mobile]);
  const snapshot=outgoing??current;
  const narration=narrationPlayback(snapshot,data);
- const mobile=controller.mobile;
- const line=narrationFor({chapter:narration.beat.id,mobile},data,summary);
+ const line=narrationFor({chapter:narration.beat.id},data,summary);
  const previousBeat=snapshot.chapters[snapshot.chapters.indexOf(narration.beat)-1];
  const previousLine=previousBeat?narrationFor({chapter:previousBeat.id},data,summary):null;
  const openingPhase=snapshot.chapter==='intro_problem'?'first':snapshot.chapter==='intro_question'?'second':previousBeat?.id==='intro_question'?'exit':null;
  const opening=openingPhase?{phase:openingPhase,handoffTime:state.time-snapshot.chapters[1].at,dock:snapshot.dock,dockElapsed:snapshot.storyTime-EVENTS.dock,first:narrationFor({chapter:'intro_problem'},data,summary),second:narrationFor({chapter:'intro_question'},data,summary)}:null;
+ const mobile=controller.mobile;
  const reservedLines=useMemo(()=>mobile?snapshot.chapters.filter(b=>b.id!=='result').map(b=>narrationFor({chapter:b.id},data,summary).text):null,[mobile,data,summary]);
  const footerReady=closing&&(reduced||current.local>=benchmarkTiming(line).end);
  const profiles=(atEnd=false)=><nav className={atEnd?"closing-links":"app-header"} aria-label={atEnd?"Social profiles":"Methodology and social profiles"}>
@@ -57,7 +57,7 @@ export default function PresentationDocument({data,controller,onParameters,busy=
  return <article className="routing-presentation" data-footer-ready={footerReady||undefined} data-beat={current.chapter} data-workspace-exiting={exiting||undefined} data-playhead={Math.round(state.time)} data-playing={state.playing&&!suspended} style={{'--dock':snapshot.dock}}>
  {!closing&&<div className="presentation-slide" style={exiting?{display:'block',opacity:1-ease(current.local/WORKSPACE_EXIT_MS),transform:`translateY(${18*ease(current.local/WORKSPACE_EXIT_MS)}px)`}:undefined}>
  {profiles()}
- <TextGenerationIntro reservedLines={reservedLines} line={line} previousLine={previousLine} opening={opening} time={narration.local} reduced={reduced} showThinking={!mobile&&snapshot.chapter.startsWith('intro_')}/>
+ <TextGenerationIntro reservedLines={reservedLines} line={line} previousLine={previousLine} opening={opening} time={narration.local} reduced={reduced} showThinking={snapshot.chapter.startsWith('intro_')}/>
  <AgentWorkspace exiting={exiting} data={data} snapshot={snapshot} lead={lead} summary={summary} controller={controller} busy={busy} error={error}/>
  {mobile&&reduced&&<nav className="static-navigation" aria-label="Read presentation steps">
   <button disabled={current.chapter==='intro_problem'} onClick={()=>dispatch({type:'back'})}>Previous step</button>

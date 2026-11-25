@@ -24,21 +24,16 @@ try{
   await page.addStyleTag({content:'.qa-toolbar{position:fixed!important;bottom:0;opacity:0!important;pointer-events:none}'});
   await page.evaluate(()=>document.fonts.ready);await seek(0);const original=await geometry();
   for(const [i,b] of chapters.slice(0,2).entries()){
-   const line=narrationFor({chapter:b.id,mobile:width<=700},data),tokens=narrationTokens(line.text,line.at,line.rate,line.focal,line.steady);
+   const line=narrationFor({chapter:b.id},data),tokens=narrationTokens(line.text,line.at,line.rate,line.focal);
    await seek(b.at+line.at);const reference=await geometry();
    near((i?reference.second:reference.first).x,original.first.x,'shared X origin');if(i&&width<=700)near(reference.second.y-reference.first.bottom,reference.lineHeight,'one line between paragraphs');else near((i?reference.second:reference.first).y,original.first.y+(i&&width>700?original.words[0].height/2:0),'deliberate half-line second offset');
-   for(const local of [...tokens.map(t=>line.at+(t.start-line.at)*line.wordClockScale+1),line.at+line.duration+1]){
+   for(const local of [...tokens.map(t=>t.start+1),line.at+line.duration+1]){
     await seek(b.at+local);const current=await geometry();
     current.words.forEach((word,index)=>{near(word.x,reference.words[index].x,'fixed word X');near(word.y,reference.words[index].y,'fixed word Y');});
     assert.equal(current.firstOpacity,'1');near(current.frame.y,reference.frame.y,'stable browser during generation');
     if(i)assert.ok(current.first.bottom<current.second.y,'paragraphs do not overlap');
     const active=tokens.findIndex(t=>t.candidates.length&&local>=t.start&&local<t.end);
-    if(width<=700){
-     assert.equal(current.overlay,null);
-     const wordTime=line.at+(local-line.at)/line.wordClockScale;
-     const visible=await page.locator(`[data-intro-paragraph="${i?'second':'first'}"] .narrator-word:not([data-state=pending])`).count();
-     assert.equal(visible,tokens.filter(t=>wordTime>=t.start).length);
-    }else if(active>=0){const word=current.words[(i?reference.words.length-tokens.length:0)+active],compact=word.bottom-current.root.y+108*current.scale>current.root.height;assert.ok(current.overlay);near(current.overlay.y,word.bottom+(compact?4:8)*current.scale,'candidate anchor');}
+    if(active>=0){const word=current.words[(i?reference.words.length-tokens.length:0)+active],compact=word.bottom-current.root.y+108*current.scale>current.root.height;assert.ok(current.overlay);near(current.overlay.y,word.bottom+(compact?4:8)*current.scale,'candidate anchor');}
    }
   }
   let lastY=original.first.y;
