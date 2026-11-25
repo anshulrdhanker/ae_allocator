@@ -5,6 +5,7 @@ import {ease,progress} from './narrative.mjs';
 
 export default function TextGenerationIntro({line,reservedLines=null,previousLine,opening=null,closing=false,time,reduced,showThinking=true}){
  const root=useRef(null),active=useRef(null),[position,setPosition]=useState({left:0,top:0,width:184,compact:false});
+ const secondCopy=useRef(null);
  const firstCopy=useRef(null),[geometry,setGeometry]=useState({lift:0,gap:0,exitDistance:0});
  const tokens=useMemo(()=>narrationTokens(line.text,line.at,line.rate,line.focal,line.steady),[line.text,line.at,line.rate,line.steady,String(line.focal)]);
  const firstTokens=useMemo(()=>opening?narrationTokens(opening.first.text,opening.first.at,opening.first.rate,opening.first.focal):[],[opening?.first.text]);
@@ -26,9 +27,15 @@ export default function TextGenerationIntro({line,reservedLines=null,previousLin
    // paragraph above the viewport when docking finishes, at any breakpoint.
    const bounds=root.current.getBoundingClientRect(),scale=bounds.width/root.current.offsetWidth;
    const exitDistance=reservedLines?0:Math.max(0,(bounds.top+window.scrollY)/scale-dockOffset);
+   if(reservedLines&&secondCopy.current){
+    const first=firstCopy.current.offsetHeight,second=secondCopy.current.offsetHeight;
+    setGeometry({first,second,lift:first*(second+2*gap)/Math.max(1,first+second+2*gap),gap,exitDistance:0});
+    return;
+   }
    setGeometry({lift:firstCopy.current.getBoundingClientRect().height/scale+gap,gap,exitDistance});
   };
   measure();const observer=new ResizeObserver(measure);observer.observe(firstCopy.current);
+  if(reservedLines&&secondCopy.current)observer.observe(secondCopy.current);
   return()=>observer.disconnect();
  },[opening?.phase,opening?.first.text,reservedLines]);
  const reserve=useMemo(()=>reservedLines&&<div className="narration-reserve" aria-hidden="true">{reservedLines.map(text=><p key={text}>{text.split(' ').map((word,i)=><span key={i}><span className="narrator-word">{word}</span>{' '}</span>)}</p>)}</div>,[reservedLines]);
@@ -39,10 +46,18 @@ export default function TextGenerationIntro({line,reservedLines=null,previousLin
  const exitProgress=ease(progress(time,0,exitDuration));
  // Use the existing end-of-paragraph hold for a gentler lift, keeping its end
  // and the breathing room before the next word cue unchanged.
- const handoff=progress(opening?.handoffTime??0,-450-(INTRO_LIFT_MS-NARRATION_EXIT),INTRO_LIFT_MS);
+ const handoff=reservedLines?progress(opening?.handoffTime??0,0,900):progress(opening?.handoffTime??0,-450-(INTRO_LIFT_MS-NARRATION_EXIT),INTRO_LIFT_MS);
  const liftProgress=opening?.phase==='exit'?1:reduced?(reservedLines?Number(opening?.phase==='second'):Number(handoff>0)):handoff*handoff*(3-2*handoff);
  // The settled two-line workspace narration sits half a line below its origin.
  const secondOffset=(reservedLines?0:geometry.gap)*(reduced?1-(opening?.dock??0):1);
+ const mobileOpening=reservedLines&&opening;
+ const dock=opening?.dock??0;
+ const firstY=mobileOpening
+  ? `calc((var(--opening-origin) - min(var(--opening-origin), ${geometry.lift*liftProgress}px)) * ${1-dock} - ${dock*(geometry.first??0)}px)`
+  : `${-geometry.lift*liftProgress-geometry.exitDistance*dock-(opening?.phase==='exit'?5*exitProgress:0)}px`;
+ const secondY=mobileOpening
+  ? `calc((var(--opening-origin) - min(var(--opening-origin), ${geometry.lift}px) + ${(geometry.first??0)+2*geometry.gap}px) * ${1-dock})`
+  : `${secondOffset}px`;
  const streamingCopy=useRef(null);
  const [wraps,setWraps]=useState([]);
  useLayoutEffect(()=>{
@@ -85,16 +100,16 @@ export default function TextGenerationIntro({line,reservedLines=null,previousLin
   };
   measure();const observer=new ResizeObserver(measure);observer.observe(root.current);
   return()=>observer.disconnect();
- },[current,secondOffset,wrapOffset]);
+ },[current,secondY,firstY,wrapOffset]);
  const words=closingLines?closingLines.map((lineWords,i)=><span className="closing-line" key={i}>{renderWords(lineWords,time,true)}</span>):renderWords(tokens,time,true);
  const workspaceNarration=!closing&&opening?.phase!=='first'&&opening?.phase!=='second';
  const streamingWords=workspaceNarration?<span ref={streamingCopy} style={{display:'block',position:'relative',transform:`translateY(${reduced?"0px":`calc(1lh - ${wrapOffset}px)`})`}}>{words}</span>:words;
- return <section className="narrator" data-plain-narration={!showThinking || undefined} aria-label="Narrator" ref={root} data-narration-state={exiting?'clearing':!reduced&&time<line.at?'blank':!reduced&&time<line.at+line.duration?'streaming':'complete'}>
+ return <section className="narrator" data-phone-opening={mobileOpening?.phase} data-static-pair={mobileOpening?.phase==='second'&&reduced||undefined} style={mobileOpening?{'--first-half':(geometry.first??0)/2+'px'}:undefined} data-plain-narration={!showThinking || undefined} aria-label="Narrator" ref={root} data-narration-state={exiting?'clearing':!reduced&&time<line.at?'blank':!reduced&&time<line.at+line.duration?'streaming':'complete'}>
   {reserve}
   <div className="narrator-copy" aria-hidden="true">
-   {opening&&<p ref={firstCopy} data-intro-paragraph="first" className={'intro-flow-first'+(opening.phase==='exit'?' intro-flow-history':'')} style={{visibility:opening.phase==='exit'&&!exiting?'hidden':'visible',opacity:reservedLines?1-liftProgress:opening.phase==='exit'?1-exitProgress:1,transform:`translateY(${-geometry.lift*liftProgress-geometry.exitDistance*opening.dock-(opening.phase==='exit'?5*exitProgress:0)}px)`}}>{opening.phase==='first'?streamingWords:renderWords(firstTokens,Infinity)}</p>}
-   {opening?.phase==='first'&&<p className="intro-flow-measure">{renderWords(secondTokens,-Infinity)}</p>}
-   {opening?.phase!=='first'&&<p data-intro-paragraph={opening?.phase==='second'?'second':undefined} style={opening?.phase==='second'?{transform:`translateY(${secondOffset}px)`}:undefined}>{streamingWords}</p>}
+   {opening&&<p ref={firstCopy} data-intro-paragraph="first" className={'intro-flow-first'+(opening.phase==='exit'?' intro-flow-history':'')} style={{visibility:opening.phase==='exit'&&!exiting?'hidden':'visible',opacity:mobileOpening?1-dock:opening.phase==='exit'?1-exitProgress:1,transform:`translateY(${firstY})`}}>{opening.phase==='first'?streamingWords:renderWords(firstTokens,Infinity)}</p>}
+   {opening?.phase==='first'&&<p ref={secondCopy} className="intro-flow-measure">{renderWords(secondTokens,-Infinity)}</p>}
+   {opening?.phase!=='first'&&<p ref={secondCopy} data-intro-paragraph={opening?.phase==='second'?'second':undefined} style={opening?.phase==='second'?{transform:`translateY(${secondY})`}:undefined}>{streamingWords}</p>}
    {previousLine&&opening?.phase!=='second'&&<p className="narrator-previous" style={{visibility:exiting?'visible':'hidden',opacity:1-exitProgress,transform:`translateY(calc(${opening?.phase==='exit'?secondOffset+'px':workspaceNarration&&!opening?outgoingOffset:"0px"} - ${5*exitProgress}px))`}}>{previousLine.text}</p>}
   </div>
   <p className="sr-only">{line.text}</p>

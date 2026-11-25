@@ -1,5 +1,5 @@
 import {memo,useLayoutEffect,useRef,useState} from 'react';
-import {EVENTS as E,progress,ease} from './narrative.mjs';
+import {eventsFor,MOBILE_EXPAND_MS,smoothProgress,progress,ease} from './narrative.mjs';
 import InboundView from './InboundView';
 import AllocationEngine from './AllocationEngine';
 import {leadName,previousInboundLead} from './selectors.mjs';
@@ -19,8 +19,9 @@ const RecordSizes=memo(function RecordSizes({data,lead,report}){
 export default function AgentWorkspace({data,snapshot,lead,summary,controller,error,exiting=false}){
  const {dispatch,state}=controller,{storyTime:t,view,frame}=snapshot;
  const mobile=controller.mobile;
+ const E=eventsFor(mobile);
  const [recordHeight,setRecordHeight]=useState(0);
- const expanded=view==='allocation'?1:snapshot.chapter==='inbound_record'?ease(progress(t,E.openRecord,800)):snapshot.chapter==='lead_economics'?1:0;
+ const expanded=view==='allocation'?1:snapshot.chapter==='inbound_record'?(mobile?smoothProgress(progress(t,E.openRecord,MOBILE_EXPAND_MS)):ease(progress(t,E.openRecord,800))):snapshot.chapter==='lead_economics'?1:0;
  const showPrevious=view==='inbound'&&(snapshot.chapter.startsWith('intro_')||t<E.openRecord);
  const record=showPrevious&&data?previousInboundLead(data):lead;
  const previous=useRef(null);

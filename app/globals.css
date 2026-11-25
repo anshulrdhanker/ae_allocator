@@ -898,3 +898,26 @@ strong, .route-chip, .policy-result, .capacity-usage { font-variant-numeric: tab
   .benchmark-grid figcaption { align-self: start }
   .optimizer-entry { padding-bottom: calc(20px + env(safe-area-inset-bottom)) }
 }
+
+@media (max-width: 700px) {
+  .presentation-slide .narrator[data-phone-opening] {
+    --opening-origin: max(0px, calc(46svh - 62px - env(safe-area-inset-top) - var(--first-half)));
+    clip-path: inset(0 0 -100svh);
+  }
+  .narrator[data-static-pair] .narrator-copy { display: block }
+  .narrator[data-static-pair] .intro-flow-first { margin-bottom: 1lh; opacity: 1 !important }
+  .narrator[data-static-pair] .narrator-copy > p { transform: none !important }
+  /* The settled sizing samples preserve the approved allocation geometry. */
+  .product-content .inbound-record .record-properties,
+  .product-content .net-uplift small { display: none }
+  .product-content .inbound-record .compact-record { padding-block: 12px }
+  .benchmark-page .narrator { margin-bottom: 26px }
+  .benchmark-grid { row-gap: 24px }
+  .benchmark-grid figure { grid-row: span 3; row-gap: 0 }
+  .benchmark-grid figcaption { display: grid; grid-row: span 2; grid-template-rows: subgrid; row-gap: 0; align-self: stretch }
+  .benchmark-grid .strategy-name { display: none }
+  .benchmark-grid figcaption strong { font-weight: 700; color: var(--ink); margin-top: 4px }
+  .benchmark-grid .benchmark-pair { margin-top: 20px }
+  .benchmark-result { margin: 24px 0 8px }
+  .resume-disclosure { scroll-margin-top: calc(env(safe-area-inset-top) + 14px) }
+}

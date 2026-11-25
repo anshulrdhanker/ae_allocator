@@ -21,4 +21,4 @@ export function playbackReducer(state,action){const chapters=action.chapters??BE
  case 'seek-time':return {...state,resultFrom:undefined,time:Math.max(0,Math.min(end,action.time)),playing:!!action.keepPlaying&&state.playing&&action.time<end};
  default:return state;
 }}
-export function advanceClock({now,previous,hidden,ready,time,speed}){if(hidden||(!ready&&time>=INTRO_DURATION))return {previous:null,delta:0};if(previous===null)return {previous:now,delta:0};if(now-previous<24)return {previous,delta:0};const delta=(now-previous)*speed;return {previous:now,delta:ready?delta:Math.min(delta,INTRO_DURATION-time)}}
+export function advanceClock({now,previous,hidden,ready,time,speed,readyLimit=INTRO_DURATION}){if(hidden||(!ready&&time>=readyLimit))return {previous:null,delta:0};if(previous===null)return {previous:now,delta:0};if(now-previous<24)return {previous,delta:0};const delta=(now-previous)*speed;return {previous:now,delta:ready?delta:Math.min(delta,readyLimit-time)}}

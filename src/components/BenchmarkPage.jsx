@@ -26,7 +26,7 @@ export default function BenchmarkPage({data,line,time,reduced,children}){
   <TextGenerationIntro line={line} time={time} reduced={reduced} showThinking={false}/>
   <div className="benchmark-grid">{policies.map((policy,index)=>{
     const gain=policy.expected_revenue>0?100*(revenue/policy.expected_revenue-1):null;
-    return <figure key={policy.name} style={reveal(timing.cards[index])}><figcaption>{policy.name}<small>{descriptions[policy.name]}</small><strong>MILP {gain===null?'—':(gain>0?'+':'')+gain.toFixed(2)+'%'}</strong></figcaption>
+    return <figure key={policy.name} style={reveal(timing.cards[index])}><figcaption><span className="strategy-name">{policy.name}</span><small>{descriptions[policy.name]}</small><strong>MILP {gain===null?'—':(gain>0?'+':'')+gain.toFixed(2)+'%'}</strong></figcaption>
      <div className="benchmark-pair">{[['Heuristic',policy.expected_revenue],['MILP',revenue]].map(([name,value])=><div key={name}>
       <div className="benchmark-column"><b>{millions(value)}</b><i style={{height:(value/ceiling*100)+'%'}}/></div><small>{name}</small>
      </div>)}</div></figure>;

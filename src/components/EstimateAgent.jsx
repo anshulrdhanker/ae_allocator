@@ -10,7 +10,7 @@ export default function EstimateAgent({lead,time,at,reduced=false,collapse=0,mob
  const animate=!done&&!reduced&&time>=at;
  const flip=animate?progress(elapsed%2000,350,950):0;
  const traceStyle=(at)=>mobile&&!reduced?{opacity:.5+.5*progress(time,at,300)}:undefined;
- const status=done?'✓ Inputs prepared':animate?<><span className="sr-only">Thinking</span><span aria-hidden="true">{Array.from('Thinking',(letter,i)=>{
+ const status=done?'✓ Inputs prepared':mobile&&time<at?'':animate?<><span className="sr-only">Thinking</span><span aria-hidden="true">{Array.from('Thinking',(letter,i)=>{
   const phase=progress(elapsed%1600,i*65,550);
   return <span key={i} style={{display:'inline-block',transform:`translateY(${-1.7*Math.sin(Math.PI*phase)**2}px)`}}>{letter}</span>;
  })}</span></>:'Thinking';

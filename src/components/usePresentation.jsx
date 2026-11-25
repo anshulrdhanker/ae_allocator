@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useReducer,useState,useRef,useCallback,useMemo} from 'react';
 import {initialPlayback,playbackReducer,advanceClock} from './playback.mjs';
-import {chaptersFor} from './narrative.mjs';
+import {chaptersFor,INTRO_AFTER_BROWSER_MS} from './narrative.mjs';
 export default function usePresentation(data,suspended){
  const [state,baseDispatch]=useReducer(playbackReducer,undefined,initialPlayback);
  const [manualSpeed,setSpeed]=useState(null),[osReduced,setOSReduced]=useState(null),[manualReduced,setManualReduced]=useState(false);
@@ -15,7 +15,7 @@ export default function usePresentation(data,suspended){
  const speed=manualSpeed??(state.time<20000?1.2:1);
  const reduced=!!osReduced||manualReduced;
  const stateRef=useRef(state);stateRef.current=state;
- const chapters=useMemo(()=>chaptersFor(data),[data]);
+ const chapters=useMemo(()=>chaptersFor(data,mobile),[data,mobile]);
  const dispatch=useCallback(action=>baseDispatch({reduced,...action,chapters:action.chapters??chapters}),[chapters,reduced]);
  useEffect(()=>{
   if(mobile||reduced||suspended)return;
@@ -52,7 +52,7 @@ export default function usePresentation(data,suspended){
   const resetPrevious=()=>{previous=null;};
   document.addEventListener('visibilitychange',resetPrevious);
   const tick=now=>{
-   const sample=advanceClock({now,previous,hidden:document.hidden,ready:!!data,time:stateRef.current.time,speed});
+   const sample=advanceClock({now,previous,readyLimit:chapters[1].end-INTRO_AFTER_BROWSER_MS,hidden:document.hidden,ready:!!data,time:stateRef.current.time,speed});
    previous=sample.previous;
    if(sample.delta)dispatch({type:'tick',delta:sample.delta});
    frame=requestAnimationFrame(tick);

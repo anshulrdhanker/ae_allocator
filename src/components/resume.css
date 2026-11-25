@@ -44,3 +44,16 @@
 .resume-sheet li::before { content: ''; display: inline-block; width: 6px; height: 6px; background: #444; border-radius: 50%; margin: 0 42px 1px 0 }
 .resume-sheet strong { font-weight: 700; font-variant-numeric: normal }
 .resume-sheet li a { color: #1155cc; text-decoration: underline }
+
+@media (max-width: 700px) {
+  .resume-sheet { zoom: 1; width: 100%; min-height: 0; padding: 22px clamp(12px,4vw,24px); font-size: 15px; line-height: 1.36 }
+  .resume-sheet header p { line-height: 1.5; overflow-wrap: anywhere }
+  .resume-sheet h1, .resume-sheet h2, .resume-sheet h3 { font-size: 16px; line-height: 1.25 }
+  .resume-sheet .resume-meta { margin: 2px 0 4px; font-size: 14px }
+  .resume-sheet section:first-of-type h2 { margin-right: 0 }
+  .resume-sheet section + section, .resume-sheet section.resume-project, .resume-sheet ul + h3 { margin-top: 18px }
+  .resume-sheet .resume-project h2 { margin-bottom: 8px }
+  .resume-sheet li { position: relative; padding-left: 1em }
+  .resume-sheet li + li { margin-top: 3px }
+  .resume-sheet li::before { position: absolute; left: 1px; top: .58em; width: 4px; height: 4px; margin: 0 }
+}

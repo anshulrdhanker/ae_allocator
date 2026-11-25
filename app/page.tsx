@@ -68,7 +68,7 @@ export default function Home(){
   <details className="resume-disclosure" onToggle={event=>{
     const disclosure=event.currentTarget;
     setResumeOpen(disclosure.open);
-    if(disclosure.open) disclosure.querySelector('.resume-stage')?.scrollIntoView({
+    if(disclosure.open) (controller.mobile?disclosure:disclosure.querySelector('.resume-stage'))?.scrollIntoView({
       behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth', block:'start'
     });
   }}>

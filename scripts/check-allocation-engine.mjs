@@ -21,7 +21,7 @@ try {
     await page.setViewportSize({width,height});
     await page.goto('file:///tmp/living-document-qa/index.html');
     await page.addStyleTag({content:'.qa-toolbar{position:absolute;opacity:0;pointer-events:none}'});
-    const chapters = chaptersFor(fixtures.default);
+    const chapters = chaptersFor(fixtures.default,width<=700);
     const shared = chapters.find(c => c.id === 'shared_allocation');
     const cohort = chapters.find(c => c.id === 'cohort_allocation');
     await seek(shared.at);

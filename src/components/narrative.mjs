@@ -20,6 +20,16 @@ export const EVENTS={
  cohort:64000,optimized:65600,aggregate:67200,usage:68700,cohortDone:69100,
  results:76700,report:76700,reportOptimized:77600,resultDelta:79400,qualification:81400,finalHold:81700,
 };
+// Story cues remain local to their chapter. Changing an opening hold shifts
+// subsequent chapter starts, never the allocation graph's local clock.
+const mobileArrival=16200;
+const mobileOpen=mobileArrival+(EVENTS.openRecord-EVENTS.arrival);
+export const MOBILE_EXPAND_MS=1350;
+const mobileEntrance=1450;
+const phoneEvents={...EVENTS,frameDone:EVENTS.frame+mobileEntrance,arrival:mobileArrival,
+ openRecord:mobileOpen,estimates:mobileOpen+MOBILE_EXPAND_MS+750};
+export const eventsFor=mobile=>mobile?phoneEvents:EVENTS;
+export const smoothProgress=p=>p*p*(3-2*p);
 export const PREPARED_INPUT_HOLD_MS=2000;
 export const SIMULATION_LEAD_IN_MS=1020;
 const NARRATION_LEAD_IN_MS=550;
@@ -79,7 +89,8 @@ export function narrationPlayback(snapshot, data) {
  return {beat, local};
 }
 
-export function chaptersFor(data){
+export function chaptersFor(data,mobile=false){
+ const events=eventsFor(mobile);
  let at=0,storyAt=0;
  return definitions.flatMap(([id,duration])=>{
   const sourceAt=storyAt;storyAt+=duration;
@@ -91,9 +102,9 @@ export function chaptersFor(data){
   const delay=id==='result'
    ? 0
    : comparing||['inbound_record','lead_economics'].includes(id)?0:Math.ceil(Math.max(id==='intro_question'?6679:0,line.at+line.readingMs+READING.afterNarrationMs-((firstAction[id]??sourceAt+duration)-sourceAt))); 
-  const tail=id==='intro_question'?Math.max(0,EVENTS.frameDone+INTRO_AFTER_BROWSER_MS-sourceAt-duration):id==='lead_economics'?2200:id==='cohort_allocation'?NAV_HANDOFF_MS:0;
+  const tail=id==='intro_question'?Math.max(0,events.frameDone+INTRO_AFTER_BROWSER_MS-sourceAt-duration):id==='lead_economics'?2200:id==='cohort_allocation'?NAV_HANDOFF_MS:0;
   let actual=id==='inbound_record'&&data
-   ? Math.ceil(Math.max(latestEstimateReady(data,EVENTS.estimates)-sourceAt+400+PREPARED_INPUT_HOLD_MS,line.at+line.duration+READING.afterNarrationMs))
+   ? Math.ceil(Math.max(latestEstimateReady(data,events.estimates)-sourceAt+400+PREPARED_INPUT_HOLD_MS,line.at+line.duration+READING.afterNarrationMs))
    : duration/storyRate+delay+tail;
   // With narration running alongside the charts, only a short totals hold is needed.
   if(id==='cohort_allocation'&&data?.opportunities.length) actual-=3000;
@@ -104,10 +115,10 @@ export function chaptersFor(data){
 }
 export const BEATS=chaptersFor(null),TOTAL_DURATION=BEATS.at(-1).end,INTRO_DURATION=BEATS[1].at+BEATS[1].delay+(EVENTS.frameDone-BEATS[1].storyAt)/BEATS[1].storyRate;
 export const beatAt=(time,chapters=BEATS)=>chapters.find(b=>time<b.end)??chapters.at(-1);
-export function deriveTimelineState(data,time,reduced=false){
- const chapters=chaptersFor(data),beat=beatAt(time,chapters),local=time-beat.at;
+export function deriveTimelineState(data,time,reduced=false,mobile=false){
+ const chapters=chaptersFor(data,mobile),beat=beatAt(time,chapters),local=time-beat.at;
  const t=beat.storyAt+Math.max(0,local-beat.delay)*beat.storyRate;
  // The entrance stays complete when later chapters resume their own story cues.
  const introTime=chapters[1].storyAt+Math.max(0,time-chapters[1].at-chapters[1].delay)*chapters[1].storyRate;
- return {chapter:beat.id,beat,chapters,time,local,storyTime:t,empty:data?.opportunities.length===0,done:time>=chapters.at(-1).end,view:beat.id==='result'?'results':['shared_allocation','cohort_allocation'].includes(beat.id)?'allocation':'inbound',cohort:t>=EVENTS.cohort,frame:ease(progress(introTime,EVENTS.frame,INTRO_BROWSER_ENTER_MS)),dock:ease(progress(introTime,EVENTS.dock,INTRO_DOCK_MS)),pointer:null,reduced};
+ return {chapter:beat.id,beat,chapters,time,local,storyTime:t,empty:data?.opportunities.length===0,done:time>=chapters.at(-1).end,view:beat.id==='result'?'results':['shared_allocation','cohort_allocation'].includes(beat.id)?'allocation':'inbound',cohort:t>=EVENTS.cohort,frame:mobile?smoothProgress(progress(introTime,EVENTS.frame,mobileEntrance)):ease(progress(introTime,EVENTS.frame,INTRO_BROWSER_ENTER_MS)),dock:ease(progress(introTime,EVENTS.dock,INTRO_DOCK_MS)),pointer:null,reduced};
 }

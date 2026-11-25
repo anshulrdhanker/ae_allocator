@@ -3,13 +3,10 @@ import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import http from 'node:http';
-import {chaptersFor,EVENTS as E,CALCULATION_DELAY} from '../src/components/narrative.mjs';
+import {chaptersFor,eventsFor,CALCULATION_DELAY} from '../src/components/narrative.mjs';
 import {modelInputFields,ESTIMATE_REVEAL_MS,estimateOperation} from '../src/components/agent-activity.mjs';
 import {arrivalLead} from '../src/components/selectors.mjs';
 const data=JSON.parse(await fs.readFile('tests/fixtures.json','utf8')).default;
-const chapters=chaptersFor(data),beat=chapters.find(b=>b.id==='inbound_record');
-const operation=estimateOperation(arrivalLead(data),E.estimates);
-const absolute=(story,b=beat)=>b.at+b.delay+story-b.storyAt;
 const server=http.createServer(async(req,res)=>{
  const name=req.url==='/'?'index.html':'qa.js';res.setHeader('Content-Type',name.endsWith('.js')?'text/javascript':'text/html');
  res.end(await fs.readFile(`/tmp/living-document-qa/${name}`));
@@ -18,6 +15,10 @@ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const browser=await chromium.launch({headless:true});
 try{
  for(const width of [1440,390]){
+  const E=eventsFor(width<=700);
+  const chapters=chaptersFor(data,width<=700),beat=chapters.find(b=>b.id==='inbound_record');
+  const operation=estimateOperation(arrivalLead(data),E.estimates);
+  const absolute=(story,b=beat)=>b.at+b.delay+story-b.storyAt;
   const page=await browser.newPage({viewport:{width,height:1100}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   const seek=async time=>{await page.getByRole('spinbutton',{name:'Time (ms)'}).fill(String(Math.round(time)));await page.waitForFunction(t=>Number(document.querySelector('[data-playhead]').dataset.playhead)===t,Math.round(time));};

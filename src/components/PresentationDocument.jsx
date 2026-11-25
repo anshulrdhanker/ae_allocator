@@ -15,7 +15,7 @@ export default function PresentationDocument({data,controller,onParameters,busy=
  const {state,dispatch,speed,setSpeed,reduced,setReduced,osReduced,suspended}=controller;
  const lead=useMemo(()=>data?(data.opportunities.find(l=>l.id===state.selectedId)??arrivalLead(data)):null,[data,state.selectedId]);
  const summary=useMemo(()=>data?presentationSummary(data):null,[data]);
- const current=deriveTimelineState(data,state.time,reduced);
+ const current=deriveTimelineState(data,state.time,reduced,controller.mobile);
  const duration=current.chapters.at(-1).end;
  const introBeat=current.chapters[1];
  const allocation=current.chapters.find(b=>b.id==='shared_allocation'||b.id==='cohort_allocation');
@@ -31,7 +31,7 @@ export default function PresentationDocument({data,controller,onParameters,busy=
  // A manual Results click can originate anywhere in the workspace. Keep that
  // exact frame mounted while it leaves; autoplay leaves the last cohort frame.
  const exitFrom=exiting?(state.resultFrom??current.beat.at-1):null;
- const outgoing=useMemo(()=>exitFrom===null?null:deriveTimelineState(data,exitFrom,reduced),[data,exitFrom,reduced]);
+ const outgoing=useMemo(()=>exitFrom===null?null:deriveTimelineState(data,exitFrom,reduced,controller.mobile),[data,exitFrom,reduced,controller.mobile]);
  const snapshot=outgoing??current;
  const narration=narrationPlayback(snapshot,data);
  const line=narrationFor({chapter:narration.beat.id},data,summary);
@@ -44,7 +44,7 @@ export default function PresentationDocument({data,controller,onParameters,busy=
  const footerReady=closing&&(reduced||current.local>=benchmarkTiming(line).footer);
  const profiles=(atEnd=false)=><nav className={atEnd?"closing-links":"app-header"} aria-label={atEnd?"Social profiles":"Methodology and social profiles"}>
    {!atEnd&&<><a className="methodology-label" href={verifyWithClaudeUrl} target="_blank" rel="noopener noreferrer">
-     Verify with Claude
+     {mobile?'Verify method on Claude':'Verify with Claude'}
      <svg aria-hidden="true" width="16" height="10" viewBox="0 0 16 10" shapeRendering="crispEdges">
        <path fill="#d97757" fillRule="evenodd" d="M2 0h12v4h2v2h-2v2h-1v2h-1V8h-1v2h-1V8H6v2H5V8H4v2H3V8H2V6H0V4h2z M4 2v2h1V2z M11 2v2h1V2z"/>
      </svg>

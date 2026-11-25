@@ -3,13 +3,14 @@
 import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {chaptersFor,EVENTS} from '../src/components/narrative.mjs';
+import {chaptersFor,eventsFor} from '../src/components/narrative.mjs';
 import {INTRO_LIFT_MS,NARRATION_EXIT} from '../src/components/intro.mjs';
-const chapters=chaptersFor(JSON.parse(fs.readFileSync('tests/fixtures.json')).default);
-const firstLift=chapters[1].at-450-(INTRO_LIFT_MS-NARRATION_EXIT),dockAt=chapters[1].at+chapters[1].delay+EVENTS.dock-chapters[1].storyAt,frameDone=chapters[1].at+chapters[1].delay+EVENTS.frameDone-chapters[1].storyAt;
 const browser=await chromium.launch({headless:true});
 try{
  await Promise.all([1440,390].map(async width=>{
+  const EVENTS=eventsFor(width<=700);
+  const chapters=chaptersFor(JSON.parse(fs.readFileSync('tests/fixtures.json')).default,width<=700);
+  const firstLift=chapters[1].at-450-(INTRO_LIFT_MS-NARRATION_EXIT),dockAt=chapters[1].at+chapters[1].delay+EVENTS.dock-chapters[1].storyAt,frameDone=chapters[1].at+chapters[1].delay+EVENTS.frameDone-chapters[1].storyAt;
   const page=await browser.newPage({viewport:{width,height:1100}}),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   const response=page.waitForResponse(r=>r.url().endsWith('/api/simulate'));
@@ -29,16 +30,19 @@ try{
     requestAnimationFrame(sample);
    };sample();
   }),chapters[1].end-50);
-  const origin=samples[0].words[0];
+  const origin=(width<=700?samples.find(row=>row.visible>0):samples[0]).words[0];
   for(const chapter of ['intro_problem','intro_question']){
-   const rows=samples.filter(s=>s.chapter===chapter&&s.words.length&&(chapter==='intro_problem'?s.time<firstLift:s.time<dockAt)),initial=rows[0];
+   const rows=samples.filter(s=>s.chapter===chapter&&s.words.length&&(width>700||s.visible>0)&&(chapter==='intro_problem'?s.time<firstLift:s.time<dockAt)),initial=rows[0];
    assert.ok(rows.length>20);
    assert.ok(rows.some(s=>s.visible===s.words.length),'entire paragraph generated');
    for(const row of rows)for(let i=0;i<row.words.length;i++){
     assert.ok(Math.abs(row.words[i].x-initial.words[i].x)<=1,'word shifted horizontally');
-    assert.ok(Math.abs(row.words[i].y-initial.words[i].y)<=1,'word shifted vertically');
+    assert.ok(Math.abs(row.words[i].y-initial.words[i].y)<=1,`word shifted vertically at ${width}px / ${row.time} ms`);
    }
-   assert.ok(Math.abs(initial.words[0].y-origin.y-(chapter==='intro_question'&&width>700?origin.height/2:0))<=1,'second paragraph offset differs');
+   if(width<=700&&chapter==='intro_question'){
+    const together=rows.filter(row=>row.visible===row.words.length);
+    assert.ok(together.every(row=>row.firstOpacity==='1'&&row.firstBottom<row.words[0].y));
+   }else assert.ok(Math.abs(initial.words[0].y-origin.y-(chapter==='intro_question'&&width>700?origin.height/2:0))<=1,'second paragraph offset differs');
    assert.ok(Math.abs(initial.words[0].x-origin.x)<=1,'paragraph origins differ');
   }
   if(width<=700)assert.equal(samples.at(-1).firstOpacity,'0');
