@@ -14,7 +14,8 @@ const seek=async time=>{await page.getByRole('spinbutton',{name:'Time (ms)'}).fi
 const geometry=()=>page.evaluate(()=>{
  const box=n=>{if(!n)return null;const r=n.getBoundingClientRect();return {x:r.x,y:r.y,height:r.height,width:r.width,bottom:r.bottom};};
  const first=document.querySelector('[data-intro-paragraph=first]'),second=document.querySelector('[data-intro-paragraph=second]');
- return {first:box(first),second:box(second),root:box(document.querySelector('.narrator')),frame:box(document.querySelector('.browser-window')),firstOpacity:first&&getComputedStyle(first).opacity,words:[...document.querySelectorAll('[data-intro-paragraph] .narrator-word')].map(box),overlay:box(document.querySelector('.intro-selection'))};
+ const root=document.querySelector('.narrator'),scale=root.getBoundingClientRect().width/root.offsetWidth;
+ return {scale,first:box(first),second:box(second),root:box(document.querySelector('.narrator')),frame:box(document.querySelector('.browser-window')),lineHeight:parseFloat(getComputedStyle(document.querySelector('.narrator')).lineHeight),firstOpacity:first&&getComputedStyle(first).opacity,words:[...document.querySelectorAll('[data-intro-paragraph] .narrator-word')].map(box),overlay:box(document.querySelector('.intro-selection'))};
 });
 try{
  for(const width of [1440,768,390,320]){
@@ -31,7 +32,7 @@ try{
     assert.equal(current.firstOpacity,'1');near(current.frame.y,reference.frame.y,'stable browser during generation');
     if(i)assert.ok(current.first.bottom<current.second.y,'paragraphs do not overlap');
     const active=tokens.findIndex(t=>t.candidates.length&&local>=t.start&&local<t.end);
-    if(active>=0){const word=current.words[(i?reference.words.length-tokens.length:0)+active],compact=word.bottom-current.root.y+108>current.root.height;assert.ok(current.overlay);near(current.overlay.y,word.bottom+(compact?4:8),'candidate anchor');}
+    if(active>=0){const word=current.words[(i?reference.words.length-tokens.length:0)+active],compact=word.bottom-current.root.y+108*current.scale>current.root.height;assert.ok(current.overlay);near(current.overlay.y,word.bottom+(compact?4:8)*current.scale,'candidate anchor');}
    }
   }
   let lastY=original.first.y;
@@ -48,14 +49,14 @@ try{
   assert.equal(chapters[1].end-frameDoneAt,INTRO_AFTER_BROWSER_MS);
   for(const t of [dockAt+INTRO_DOCK_MS+500,frameAt-1]){await seek(t);assert.equal(await page.locator('.browser-window').evaluate(n=>getComputedStyle(n).visibility),'hidden');}
   await seek(frameDoneAt);const rested=await geometry();
-  await seek(frameDoneAt+900);near((await geometry()).second.y,rested.second.y,'reading hold after entrance');
+  await seek(chapters[1].end-1);near((await geometry()).second.y,rested.second.y,'reading hold after entrance');
   assert.equal(await page.locator('.browser-window').evaluate(n=>getComputedStyle(n).visibility),'visible');
-  assert.ok(rested.frame.y-rested.second.bottom>=20,'browser below text');
+  assert.ok(rested.frame.y-rested.second.bottom>=20*rested.scale,'browser below text');
   await seek(chapters[1].end+390);assert.ok(Number(await page.locator('.narrator-previous').evaluate(n=>getComputedStyle(n).opacity))>0,'soft exit continues beyond 390ms');
   await seek(chapters[1].end+550);assert.equal(await page.locator('.narrator-previous').evaluate(n=>getComputedStyle(n).visibility),'hidden');
   assert.equal(await page.locator('.browser-window').evaluate(n=>getComputedStyle(n).visibility),'visible','browser remains visible across chapter boundary');
   await seek(chapters[1].at-1);const beforeBoundary=await geometry();await seek(chapters[1].at);near((await geometry()).first.y,beforeBoundary.first.y,'continuous chapter boundary');
-  for(const delta of [1,100,350,INTRO_DOCK_MS-1,INTRO_DOCK_MS]){await seek(dockAt+delta);const g=await geometry();assert.ok(g.second.y<beforeDock.second.y);assert.ok(g.first.y<beforeDock.first.y);if(delta===1)near(g.second.y,beforeDock.second.y,'continuous dock start');if(delta===INTRO_DOCK_MS){assert.ok(g.first.bottom<0,'first paragraph entirely offscreen');near(g.second.y,g.root.y,'second paragraph lands at original resting origin');}}
+  for(const delta of [1,100,350,INTRO_DOCK_MS-1,INTRO_DOCK_MS]){await seek(dockAt+delta);const g=await geometry();assert.ok(g.second.y<beforeDock.second.y);assert.ok(g.first.y<beforeDock.first.y);if(delta===1)near(g.second.y,beforeDock.second.y,'continuous dock start');if(delta===INTRO_DOCK_MS){assert.ok(g.first.bottom<0,'first paragraph entirely offscreen');near(g.second.y,g.root.y+g.scale*g.lineHeight/2,'second paragraph lands at settled two-line baseline');}}
   // Completed intro transitions out with the same fade before the next narration.
   await seek(chapters[1].end-1);const end=await geometry();await seek(chapters[1].end);const exit=await geometry();near(exit.first.y,end.first.y,'continuous intro exit');
   await seek(chapters[1].at-450-(INTRO_LIFT_MS-NARRATION_EXIT)+190);const paused=await geometry();await page.waitForTimeout(120);assert.deepEqual(await geometry(),paused);

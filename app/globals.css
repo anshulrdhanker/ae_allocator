@@ -780,3 +780,88 @@ strong, .route-chip, .policy-result, .capacity-usage { font-variant-numeric: tab
 .closing-actions button:hover, .closing-actions button:focus-visible { color: var(--ink) }
 .closing-links a:hover, .closing-links a:focus-visible { color: var(--ink); text-decoration: underline }
 @media (prefers-reduced-motion: reduce) { .closing-footer { transition: none } }
+
+/* Phone composition. All views share the desktop controller and timeline. */
+@media (max-width: 700px) {
+  .optimizer-entry { padding-inline: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right)); padding-bottom: max(16px, env(safe-area-inset-bottom)) }
+  .routing-presentation { padding-top: calc(42px + env(safe-area-inset-top)) }
+  .routing-presentation .app-header { top: env(safe-area-inset-top); right: 10px; align-items: center; font-size: 11px }
+  .app-header a { display: inline-flex; align-items: center; min-height: 40px }
+  .routing-presentation .narrator {
+    margin: 0 0 10px; min-height: 0; height: auto; padding: 0 2px 1lh;
+    font-size: clamp(19px, 5vw, 21px); line-height: 1.32; letter-spacing: -.45px;
+    transform: translateY(calc((1 - var(--dock,1)) * min(12dvh,64px)));
+  }
+  .narrator .narrator-previous { position: absolute; inset: 0 0 auto }
+  .narrator:has(.intro-flow-first:not(.intro-flow-history)) { padding-bottom: 3lh }
+  .browser-window { display: block; width: 100%; height: auto; min-height: 0; padding: 0; margin: 0; background: #1b1c1f }
+  .workspace-rail { display: contents }
+  .workspace-rail > :not(.rail-nav), .rail-nav .rail-icon, .workspace-toolbar,
+  .nav-agent-cursor, .agent-cursor { display: none }
+  .rail-nav { display: flex; gap: 2px; margin: 0; padding-inline: 5px; border-bottom: 1px solid #34353a }
+  .rail-nav button { height: 35px; padding: 0 9px; font-size: 11px; border-radius: 0 }
+  .rail-nav button[aria-selected=true] { background: transparent; box-shadow: inset 0 -2px #aaa4ef }
+  .rail-nav button:has(.nav-agent-cursor), .recent-leads .arrival-slot:has(.agent-cursor) button { background: #333041; color: #d6d2ff }
+  .workspace-pane { display: block; border: 0; border-radius: 0; overflow: visible }
+  .workspace-pane .product-content { min-height: 0; overflow: visible }
+  .workspace-pane .product-content[data-sliding] { overflow: hidden }
+  .product-content[data-sliding]:not([data-entering-allocation]) > [role=tabpanel] { animation: none }
+  .product-content:not([data-entering-allocation]) > .departing-pane { visibility: hidden; animation-delay: -360ms }
+  .product-content[data-entering-allocation] > :is([role=tabpanel], .departing-pane) {
+    animation-delay: calc(-1 * var(--pane-elapsed)); animation-play-state: paused;
+  }
+  .product-content > div[role=tabpanel], .inbound-screen { min-height: 0 }
+  .inbound-screen { padding: 0 10px 10px }
+  .recent-leads { flex-direction: column; align-items: stretch; gap: 0; padding-top: 6px; min-height: 0; overflow: visible }
+  .recent-leads > span { margin: 0 4px 2px }
+  .recent-leads .queue-row { width: 100%; height: 32px; padding: 3px 5px; justify-content: space-between }
+  .recent-leads .queue-row > span:first-child { flex: 1; justify-content: space-between }
+  .inbound-screen[data-record-open] > .recent-leads, .allocation-source { display: none }
+  .compact-record { flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 8px; padding: 8px 0 }
+  .compact-record h2 { margin: 0; font-size: 17px; white-space: nowrap }
+  .record-kicker, .compact-record p, .properties-title { display: none }
+  .record-properties { min-width: 0; width: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 1px }
+  .property-line { flex-direction: row; align-items: baseline; gap: 4px }
+  .record-properties .property-line:nth-child(2) > span:first-child { display: none }
+  .workbench-header, .allocation-workbench .workbench-header { padding: 8px 10px; flex-wrap: nowrap; gap: 5px }
+  .workbench-header > span { white-space: nowrap }
+  .workbench-body { grid-template-columns: minmax(0, 1fr); gap: 7px; padding: 8px 10px 10px }
+  .workbench-label { margin: 0 0 3px }
+  .trace-row { line-height: 22px }
+  .workbench-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px 8px }
+  .workbench-metric strong { font-size: 18px; line-height: 1.2; margin-top: 1px; overflow-wrap: anywhere }
+  .economics-workbench { margin-top: 6px }
+  .economics-workbench .lead-economics { padding: 7px 10px }
+  .economics-workbench .calculation-row { gap: 8px; padding-block: 6px }
+  .calculation-row > div { min-width: 0; overflow-wrap: anywhere }
+  .economics-workbench .calculation-row strong { font-size: clamp(16px,4.7vw,20px) }
+  .economics-workbench .net-uplift strong { font-weight: 600 }
+  .economics-workbench .primary-action { min-height: 36px }
+  .allocation-screen .compact-record { padding: 7px 0 }
+  .allocation-workbench { margin: 0 }
+  .allocation-workbench .workbench-subtitle { display: none }
+  .comparison-progress, .simulation-outcome { padding: 5px 8px; gap: 2px 6px; min-height: 0 }
+  .revenue-plots { grid-template-columns: minmax(0,1fr) }
+  .revenue-chart { padding: 6px 8px; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 2px 4px }
+  .revenue-chart + .revenue-chart { border-left: 0; border-top: 1px solid #35363c }
+  .revenue-chart figcaption { gap: 1px }
+  .chart-value { margin: 0; font-size: 17px }
+  .revenue-chart svg, .chart-assignments { grid-column: 1/-1 }
+  .revenue-chart svg { height: clamp(85px,10.6dvh,100px); margin: 0 }
+  .revenue-chart svg text { font-size: 12px }
+  .chart-assignments { gap: 2px 9px }
+  .simulation-outcome strong { font-size: 16px }
+  .transport { flex-wrap: wrap; justify-content: space-between; gap: 0; margin: 4px 0 0; padding-bottom: env(safe-area-inset-bottom); font-size: 12px }
+  .transport button, .transport label { min-height: 40px; padding-inline: 2px }
+  .transport label { gap: 2px }
+  .transport .speed-caption { display: none }
+  .transport .motion-toggle { margin: 0 }
+  .transport .playback-timeline { order: 1; flex-basis: 100%; gap: 8px }
+  .playback-timeline input { height: 32px }
+  .benchmark-grid { padding: 0; gap: 18px 10px }
+  .benchmark-grid figure { min-width: 0 }
+  .benchmark-grid figcaption { text-wrap: balance }
+  .benchmark-column { width: clamp(43px,13vw,60px) }
+  .benchmark-result { margin: 12px 0 4px }
+  .benchmark-page .closing-actions a, .benchmark-page .closing-actions button { padding: 10px }
+}

@@ -43,8 +43,9 @@ try {
     const shown = comparisonFrame({chapters,time:cohort.at},1000).shown;
     assert.match(await page.locator('.comparison-progress').innerText(), new RegExp(shown + ' / 1,000'));
     await seek(cohort.complete);
-    assert.deepEqual(await totals.allTextContents(), ['$35,550,337','$36,445,460']);
-    assert.ok(await compareButton.isVisible());
+    assert.deepEqual(await totals.allTextContents(), ['$44,412,470','$48,419,621']);
+    assert.equal(await compareButton.count(),0);
+    assert.match(await page.locator('.simulation-outcome').innerText(),/4,007,150/);
     const boxes = await page.locator('.revenue-chart').evaluateAll(nodes=>nodes.map(n=>n.getBoundingClientRect().toJSON()));
     if (width >= 900) {
       assert.equal(boxes[0].top, boxes[1].top);
@@ -55,6 +56,7 @@ try {
       }));
       assert.ok(fit.plotBottom <= fit.pane && fit.controls <= height, JSON.stringify({width,fit}));
     }
+    if (width <= 700) assert.ok(boxes[1].top >= boxes[0].bottom);
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth));
     const result = chapters.at(-1);
     const workspace = page.locator('.browser-window');
@@ -62,14 +64,17 @@ try {
       await seek(result.at + offset);
       assert.equal(await workspace.getAttribute('data-view'),'allocation');
       assert.equal(await page.locator('.presentation-slide').evaluate(el=>Number(getComputedStyle(el).opacity)),opacity);
-      assert.deepEqual(await totals.allTextContents(), ['$35,550,337','$36,445,460']);
+      assert.deepEqual(await totals.allTextContents(), ['$44,412,470','$48,419,621']);
     }
     await seek(result.at + WORKSPACE_EXIT_MS);
     assert.ok(await workspace.isHidden());
-    assert.ok(await page.locator('.end-actions').isVisible());
+    assert.ok(await page.locator('.benchmark-page').isVisible());
+    await seek(result.complete);
+    assert.equal(await page.locator('.benchmark-grid figure:visible').count(),4);
     await seek(cohort.complete);
     await page.getByRole('tab',{name:'Results'}).click();
-    await page.locator('.end-actions').waitFor();
+    await page.getByRole('button',{name:'Replay presentation'}).waitFor();
+    await page.waitForSelector('[data-playing=false]');
     assert.ok(await workspace.isHidden());
     await seek(cohort.at);
     assert.deepEqual(await totals.allTextContents(),partial);
