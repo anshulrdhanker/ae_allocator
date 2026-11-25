@@ -40,7 +40,7 @@ try{
   assert.ok(Math.abs(Number(await page.locator('.stream-value .smooth-stream-word').first().evaluate(n=>getComputedStyle(n).opacity))-.5)<.001);
   await page.getByRole('checkbox',{name:'Static steps'}).check();
   assert.equal(Number(await page.locator('.stream-value .smooth-stream-word').first().evaluate(n=>getComputedStyle(n).opacity)),1);
-  assert.deepEqual(errors,[]);console.log(`${width}px: opacity sampling, stable slots/color, pause, play, seeking, transfers, StreamValue, reduced motion passed`);
+  assert.deepEqual(errors,[]);console.log(`${width}px: input reveal timing, stable value slot, pause, seeking, streamed economics and static steps passed`);
   await page.close();
  }
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
