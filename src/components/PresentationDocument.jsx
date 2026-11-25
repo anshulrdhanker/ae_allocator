@@ -38,7 +38,7 @@ export default function PresentationDocument({data,controller,onParameters,busy=
  const previousBeat=snapshot.chapters[snapshot.chapters.indexOf(narration.beat)-1];
  const previousLine=previousBeat?narrationFor({chapter:previousBeat.id},data,summary):null;
  const openingPhase=snapshot.chapter==='intro_problem'?'first':snapshot.chapter==='intro_question'?'second':previousBeat?.id==='intro_question'?'exit':null;
- const opening=openingPhase?{phase:openingPhase,handoffTime:state.time-snapshot.chapters[1].at,dock:snapshot.dock,first:narrationFor({chapter:'intro_problem'},data,summary),second:narrationFor({chapter:'intro_question'},data,summary)}:null;
+ const opening=openingPhase?{phase:openingPhase,handoffTime:state.time-snapshot.chapters[1].at,dock:snapshot.dock,dockElapsed:snapshot.storyTime-EVENTS.dock,first:narrationFor({chapter:'intro_problem'},data,summary),second:narrationFor({chapter:'intro_question'},data,summary)}:null;
  const mobile=controller.mobile;
  const reservedLines=useMemo(()=>mobile?snapshot.chapters.filter(b=>b.id!=='result').map(b=>narrationFor({chapter:b.id},data,summary).text):null,[mobile,data,summary]);
  const footerReady=closing&&(reduced||current.local>=benchmarkTiming(line).end);

@@ -50,6 +50,15 @@ try{
   assert.equal(chapters[1].end-frameDoneAt,INTRO_AFTER_BROWSER_MS);
   for(const t of [dockAt+INTRO_DOCK_MS+500,frameAt-1]){await seek(t);assert.equal(await page.locator('.browser-window').evaluate(n=>getComputedStyle(n).visibility),'hidden');}
   await seek(frameDoneAt);const rested=await geometry();
+  if(width<=700){
+   const rise=original.first.y-beforeDock.first.y;
+   near(rise,beforeDock.second.y-rested.second.y,'equal phone rises');
+   for(const fraction of [.25,.5,.75]){
+    await seek(chapters[1].at+1080*fraction);const first=await geometry();
+    await seek(dockAt+900*fraction);const second=await geometry();
+    near(original.first.y-first.first.y,beforeDock.second.y-second.second.y,'matched easing at playback speed');
+   }
+  }
   await seek(chapters[1].end-1);near((await geometry()).second.y,rested.second.y,'reading hold after entrance');
   assert.equal(await page.locator('.browser-window').evaluate(n=>getComputedStyle(n).visibility),'visible');
   assert.ok(rested.frame.y-rested.second.bottom>=20*rested.scale,'browser below text');

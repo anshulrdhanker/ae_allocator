@@ -901,7 +901,12 @@ strong, .route-chip, .policy-result, .capacity-usage { font-variant-numeric: tab
 
 @media (max-width: 700px) {
   .presentation-slide .narrator[data-phone-opening] {
-    --opening-origin: max(0px, calc(46svh - 62px - env(safe-area-inset-top) - var(--first-half)));
+    --paragraph-step: calc(var(--first-height) + 1lh);
+    --start: calc(42svh - var(--boundary) - var(--first-height) / 2);
+    /* The second paragraph rests one rise from its dock. The first starts
+       two rises from its exit, one paragraph and one line above the dock. */
+    --rise: max(var(--paragraph-step), min(calc((var(--start) + var(--paragraph-step)) / 2),
+      calc(100svh - var(--boundary) - var(--second-height))));
     clip-path: inset(0 0 -100svh);
   }
   .narrator[data-static-pair] .narrator-copy { display: block }
