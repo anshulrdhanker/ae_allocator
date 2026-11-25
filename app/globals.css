@@ -796,12 +796,13 @@ strong, .route-chip, .policy-result, .capacity-usage { font-variant-numeric: tab
   .narrator:has(.intro-flow-first:not(.intro-flow-history)) { padding-bottom: 3lh }
   .browser-window { display: block; width: 100%; height: auto; min-height: 0; padding: 0; margin: 0; background: #1b1c1f }
   .workspace-rail { display: contents }
-  .workspace-rail > :not(.rail-nav), .rail-nav .rail-icon, .workspace-toolbar,
-  .nav-agent-cursor, .agent-cursor { display: none }
+  .workspace-rail > :not(.rail-nav), .rail-nav .rail-icon, .workspace-toolbar { display: none }
   .rail-nav { display: flex; gap: 2px; margin: 0; padding-inline: 5px; border-bottom: 1px solid #34353a }
   .rail-nav button { height: 35px; padding: 0 9px; font-size: 11px; border-radius: 0 }
   .rail-nav button[aria-selected=true] { background: transparent; box-shadow: inset 0 -2px #aaa4ef }
-  .rail-nav button:has(.nav-agent-cursor), .recent-leads .arrival-slot:has(.agent-cursor) button { background: #333041; color: #d6d2ff }
+  .agent-cursor { left: 30%; top: 5px; scale: .75 }
+  .nav-agent-cursor { left: 75%; top: 13px; scale: .7 }
+  .agent-cursor, .nav-agent-cursor { transform-origin: top left }
   .workspace-pane { display: block; border: 0; border-radius: 0; overflow: visible }
   .workspace-pane .product-content { min-height: 0; overflow: visible }
   .workspace-pane .product-content[data-sliding] { overflow: hidden }
@@ -811,12 +812,17 @@ strong, .route-chip, .policy-result, .capacity-usage { font-variant-numeric: tab
     animation-delay: calc(-1 * var(--pane-elapsed)); animation-play-state: paused;
   }
   .product-content > div[role=tabpanel], .inbound-screen { min-height: 0 }
-  .inbound-screen { padding: 0 10px 10px }
+  .inbound-screen { position: relative; padding: 0 10px 10px }
   .recent-leads { flex-direction: column; align-items: stretch; gap: 0; padding-top: 6px; min-height: 0; overflow: visible }
   .recent-leads > span { margin: 0 4px 2px }
   .recent-leads .queue-row { width: 100%; height: 32px; padding: 3px 5px; justify-content: space-between }
   .recent-leads .queue-row > span:first-child { flex: 1; justify-content: space-between }
   .inbound-screen[data-record-open] > .recent-leads, .allocation-source { display: none }
+  .inbound-screen[data-record-open] > .recent-leads:has(.agent-cursor) {
+    display: flex; position: absolute; inset: 0 10px auto; z-index: 2;
+    visibility: hidden; pointer-events: none;
+  }
+  .recent-leads .agent-cursor { visibility: visible }
   .compact-record { flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 8px; padding: 8px 0 }
   .compact-record h2 { margin: 0; font-size: 17px; white-space: nowrap }
   .record-kicker, .compact-record p, .properties-title { display: none }
@@ -902,10 +908,10 @@ strong, .route-chip, .policy-result, .capacity-usage { font-variant-numeric: tab
 @media (max-width: 700px) {
   .presentation-slide .narrator[data-phone-opening] {
     --paragraph-step: calc(var(--first-height) + 1lh);
-    --start: calc(42svh - var(--boundary) - var(--first-height) / 2);
+
     /* The second paragraph rests one rise from its dock. The first starts
        two rises from its exit, one paragraph and one line above the dock. */
-    --rise: max(var(--paragraph-step), min(calc((var(--start) + var(--paragraph-step)) / 2),
+    --rise: max(var(--paragraph-step), min(calc(var(--paragraph-step) + .25lh),
       calc(100svh - var(--boundary) - var(--second-height))));
     clip-path: inset(0 0 -100svh);
   }

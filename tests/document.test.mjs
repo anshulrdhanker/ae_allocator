@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {selectContrastPair,selectPrimaryLead,presentationSummary,routeFor,solutionChecks,worklistLeads,assignmentCounts} from '../src/components/selectors.mjs';
 import {initialPlayback,playbackReducer,advanceClock} from '../src/components/playback.mjs';
-import {benchmarkTiming,INTRO_DURATION,TOTAL_DURATION,BEATS,chaptersFor,deriveTimelineState,EVENTS as E,narrationFor,narrationPlayback,CALCULATION_DELAY,PAIR_ROUTE_STAGGER,COHORT_ROUTE_STAGGER} from '../src/components/narrative.mjs';
+import {eventsFor,benchmarkTiming,INTRO_DURATION,TOTAL_DURATION,BEATS,chaptersFor,deriveTimelineState,EVENTS as E,narrationFor,narrationPlayback,CALCULATION_DELAY,PAIR_ROUTE_STAGGER,COHORT_ROUTE_STAGGER} from '../src/components/narrative.mjs';
 import {narrationTokens,tokenPhase,tokenize,NARRATION_EXIT,tokenCandidates} from '../src/components/intro.mjs';
 import {READING,readingTokens,readingDuration,readingCost,readingPhase} from '../src/components/reading.mjs';
 import {money,signedMoney} from '../src/components/economics.mjs';
@@ -244,4 +244,17 @@ test('entering the closing statement plays its word sequence or settles it for s
   const settled=playbackReducer(prior,{...action,reduced:true});
   assert.equal(settled.time,result.complete);assert.equal(settled.playing,false);
  }
+});
+
+test('mobile arrival and record preparation follow the inbound narration',()=>{
+ const data=fixtures.default;
+ const beat=chaptersFor(data,true).find(b=>b.id==='inbound_record');
+ const line=narrationFor({chapter:beat.id},data);
+ const words=narrationTokens(line.text,line.at,line.rate,line.focal,line.steady);
+ const word=name=>words.find(w=>w.text.trim()===name);
+ const cues=eventsFor(true);
+ assert.equal(cues.arrival,beat.storyAt+Math.round(word('inbound').start));
+ assert.equal(cues.openRecord-cues.arrival,2137);
+ assert.equal(cues.estimates,cues.openRecord);
+ assert.ok(cues.estimates-beat.storyAt>=word('ARR').start && cues.estimates-beat.storyAt<word('ARR').end);
 });

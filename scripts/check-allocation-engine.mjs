@@ -28,6 +28,16 @@ try {
     const totals = page.locator('.chart-value');
     assert.deepEqual(await totals.allTextContents(), ['$0','$0']);
     assert.equal(await page.locator('.allocation-inputs').count(),1);
+    if(width<=700){
+      for(const elapsed of [1,180,359]){
+        await seek(shared.at+elapsed);
+        const pane=page.locator('.departing-pane');
+        assert.equal(await pane.count(),1);
+        assert.equal(await pane.evaluate(n=>getComputedStyle(n).animationPlayState),'paused');
+      }
+      await seek(shared.at+360);
+      assert.equal(await page.locator('.departing-pane').count(),0);
+    }
     await seek(shared.at + 600);
     assert.equal(await page.locator('.allocation-inputs').count(),0);
     assert.equal(await totals.count(),2);

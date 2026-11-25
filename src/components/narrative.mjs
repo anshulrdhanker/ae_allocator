@@ -22,12 +22,10 @@ export const EVENTS={
 };
 // Story cues remain local to their chapter. Changing an opening hold shifts
 // subsequent chapter starts, never the allocation graph's local clock.
-const mobileArrival=16200;
-const mobileOpen=mobileArrival+(EVENTS.openRecord-EVENTS.arrival);
-export const MOBILE_EXPAND_MS=1350;
-const mobileEntrance=1450;
-const phoneEvents={...EVENTS,frameDone:EVENTS.frame+mobileEntrance,arrival:mobileArrival,
- openRecord:mobileOpen,estimates:mobileOpen+MOBILE_EXPAND_MS+750};
+export const PHONE_RISE_MS=700;
+export const RECORD_EXPAND_MS=800;
+const phoneFrame=dockAt+PHONE_RISE_MS+INTRO_AFTER_DOCK_MS;
+const phoneEvents={...EVENTS,frame:phoneFrame,frameDone:phoneFrame+INTRO_BROWSER_ENTER_MS};
 export const eventsFor=mobile=>mobile?phoneEvents:EVENTS;
 export const smoothProgress=p=>p*p*(3-2*p);
 export const PREPARED_INPUT_HOLD_MS=2000;
@@ -124,5 +122,5 @@ export function deriveTimelineState(data,time,reduced=false,mobile=false){
  const t=beat.storyAt+Math.max(0,local-beat.delay)*beat.storyRate;
  // The entrance stays complete when later chapters resume their own story cues.
  const introTime=chapters[1].storyAt+Math.max(0,time-chapters[1].at-chapters[1].delay)*chapters[1].storyRate;
- return {chapter:beat.id,beat,chapters,time,local,storyTime:t,empty:data?.opportunities.length===0,done:time>=chapters.at(-1).end,view:beat.id==='result'?'results':['shared_allocation','cohort_allocation'].includes(beat.id)?'allocation':'inbound',cohort:t>=EVENTS.cohort,frame:mobile?smoothProgress(progress(introTime,EVENTS.frame,mobileEntrance)):ease(progress(introTime,EVENTS.frame,INTRO_BROWSER_ENTER_MS)),dock:ease(progress(introTime,EVENTS.dock,INTRO_DOCK_MS)),pointer:null,reduced};
+ return {chapter:beat.id,beat,chapters,time,local,storyTime:t,empty:data?.opportunities.length===0,done:time>=chapters.at(-1).end,view:beat.id==='result'?'results':['shared_allocation','cohort_allocation'].includes(beat.id)?'allocation':'inbound',cohort:t>=EVENTS.cohort,frame:ease(progress(introTime,eventsFor(mobile).frame,INTRO_BROWSER_ENTER_MS)),dock:ease(progress(introTime,EVENTS.dock,INTRO_DOCK_MS)),pointer:null,reduced};
 }

@@ -1,5 +1,5 @@
 import {memo,useLayoutEffect,useRef,useState} from 'react';
-import {eventsFor,MOBILE_EXPAND_MS,smoothProgress,progress,ease} from './narrative.mjs';
+import {eventsFor,RECORD_EXPAND_MS,deriveTimelineState,progress,ease} from './narrative.mjs';
 import InboundView from './InboundView';
 import AllocationEngine from './AllocationEngine';
 import {leadName,previousInboundLead} from './selectors.mjs';
@@ -21,19 +21,22 @@ export default function AgentWorkspace({data,snapshot,lead,summary,controller,er
  const mobile=controller.mobile;
  const E=eventsFor(mobile);
  const [recordHeight,setRecordHeight]=useState(0);
- const expanded=view==='allocation'?1:snapshot.chapter==='inbound_record'?(mobile?smoothProgress(progress(t,E.openRecord,MOBILE_EXPAND_MS)):ease(progress(t,E.openRecord,800))):snapshot.chapter==='lead_economics'?1:0;
+ const expanded=view==='allocation'?1:snapshot.chapter==='inbound_record'?ease(progress(t,E.openRecord,RECORD_EXPAND_MS)):snapshot.chapter==='lead_economics'?1:0;
  const showPrevious=view==='inbound'&&(snapshot.chapter.startsWith('intro_')||t<E.openRecord);
  const record=showPrevious&&data?previousInboundLead(data):lead;
  const previous=useRef(null);
- const [departing,setDeparting]=useState(null);
+ const [previousPane,setDeparting]=useState(null);
  useLayoutEffect(()=>{
+  if(mobile)return;
   if(view==='allocation'&&previous.current?.view==='inbound'&&!snapshot.reduced){
    setDeparting(previous.current);
   }else if(view!=='allocation'||snapshot.reduced){
    setDeparting(null);
   }
   previous.current=snapshot;
- },[snapshot,view]);
+ },[snapshot,view,mobile]);
+ const phoneSlide=mobile&&!snapshot.reduced&&snapshot.chapter==='shared_allocation'&&snapshot.local<360;
+ const departing=mobile?(phoneSlide?deriveTimelineState(data,snapshot.beat.at-1,false,true):null):previousPane;
  const sliding=view==='allocation'&&departing&&!snapshot.reduced;
  const navigate=chapter=>dispatch({type:'seek',chapter});
  const handoffs=[['lead_economics','allocation'],['cohort_allocation','results']];

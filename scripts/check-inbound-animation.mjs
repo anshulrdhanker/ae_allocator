@@ -2,7 +2,7 @@ import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import http from 'node:http';
-import {chaptersFor,eventsFor,MOBILE_EXPAND_MS} from '../src/components/narrative.mjs';
+import {chaptersFor,eventsFor,RECORD_EXPAND_MS} from '../src/components/narrative.mjs';
 import {estimateOperation,modelInputFields,ESTIMATE_REVEAL_MS} from '../src/components/agent-activity.mjs';
 import {arrivalLead} from '../src/components/selectors.mjs';
 const data=JSON.parse(await fs.readFile('tests/fixtures.json','utf8')).default;
@@ -22,17 +22,20 @@ try{
   assert.ok(await page.locator('[role=tabpanel] .arrival-slot [data-lead-id="'+lead.id+'"]').isVisible());
   await seek(E.openRecord+100);
   assert.ok(await page.locator('[role=tabpanel] .compact-record h2').isVisible());
-  if(width<=700)assert.ok(await page.locator('[role=tabpanel] .recent-leads').isHidden());
+  if(width<=700){
+   assert.ok(await page.locator('[role=tabpanel] .recent-leads button').first().isHidden());
+   assert.ok(await page.locator('[role=tabpanel] .agent-cursor').isVisible());
+  }
   let settledFrame;
   if(width<=700){
    const frame=page.locator('.browser-window');
    await seek(E.openRecord);const compact=await frame.boundingBox();
    await seek(E.openRecord+400);const growing=await frame.boundingBox();
-   await seek(E.openRecord+MOBILE_EXPAND_MS);settledFrame=await frame.boundingBox();
+   await seek(E.openRecord+RECORD_EXPAND_MS);settledFrame=await frame.boundingBox();
    assert.ok(compact.height<growing.height&&growing.height<settledFrame.height);
    assert.equal(compact.y,settledFrame.y);
-   await seek(E.estimates-1);
-   assert.equal(await page.locator('[role=tabpanel] .agent-workbench').getAttribute('data-agent-phase'),'idle');
+   await seek(E.estimates);
+   assert.equal(await page.locator('[role=tabpanel] .agent-workbench').getAttribute('data-agent-phase'),'thinking');
   }
   const fields=modelInputFields(lead,op);
   const metric=key=>page.locator('[role=tabpanel] [data-input="'+key+'"]');
@@ -43,7 +46,7 @@ try{
    assert.equal(await metric(field.key).getAttribute('data-applied'),'true');
    assert.ok((await metric(field.key).innerText()).includes(field.value));
   }
-  await seek(op.committedAt+(width<=700?720:ESTIMATE_REVEAL_MS)+10);
+  await seek(op.committedAt+ESTIMATE_REVEAL_MS+10);
   assert.equal(await page.locator('[role=tabpanel] .workbench-metric[data-applied=true]').count(),6);
   assert.equal(await page.locator('[role=tabpanel] .agent-workbench').getAttribute('data-agent-phase'),'complete');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));

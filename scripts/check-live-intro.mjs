@@ -3,14 +3,14 @@
 import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {chaptersFor,eventsFor} from '../src/components/narrative.mjs';
+import {chaptersFor,eventsFor,PHONE_RISE_MS} from '../src/components/narrative.mjs';
 import {INTRO_LIFT_MS,NARRATION_EXIT} from '../src/components/intro.mjs';
 const browser=await chromium.launch({headless:true});
 try{
  await Promise.all([1440,390].map(async width=>{
   const EVENTS=eventsFor(width<=700);
   const chapters=chaptersFor(JSON.parse(fs.readFileSync('tests/fixtures.json')).default,width<=700);
-  const firstLift=chapters[1].at-450-(INTRO_LIFT_MS-NARRATION_EXIT),dockAt=chapters[1].at+chapters[1].delay+EVENTS.dock-chapters[1].storyAt,frameDone=chapters[1].at+chapters[1].delay+EVENTS.frameDone-chapters[1].storyAt;
+  const firstLift=chapters[1].at+NARRATION_EXIT-450-(width<=700?PHONE_RISE_MS*1.2:INTRO_LIFT_MS),dockAt=chapters[1].at+chapters[1].delay+EVENTS.dock-chapters[1].storyAt,frameDone=chapters[1].at+chapters[1].delay+EVENTS.frameDone-chapters[1].storyAt;
   const page=await browser.newPage({viewport:{width,height:1100}}),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   const response=page.waitForResponse(r=>r.url().endsWith('/api/simulate'));
@@ -45,7 +45,7 @@ try{
    }else assert.ok(Math.abs(initial.words[0].y-origin.y-(chapter==='intro_question'&&width>700?origin.height/2:0))<=1,'second paragraph offset differs');
    assert.ok(Math.abs(initial.words[0].x-origin.x)<=1,'paragraph origins differ');
   }
-  if(width<=700)assert.equal(samples.at(-1).firstOpacity,'0');
+  if(width<=700)assert.ok(samples.at(-1).firstBottom<=samples.at(-1).headerBottom+22);
   else assert.ok(samples.at(-1).firstBottom<0,'first paragraph clears viewport');
   assert.ok(samples.some(s=>s.time>=frameDone&&s.visible===s.words.length),'second paragraph holds after browser entrance');
   assert.equal((await response).status(),200);assert.deepEqual(errors,[]);

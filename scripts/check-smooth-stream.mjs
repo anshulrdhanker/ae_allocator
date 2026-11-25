@@ -31,7 +31,7 @@ try{
    const time=Math.round(absolute(field.commitAt)+offset);
    await seek(time);
    const opacity=await value.evaluate(n=>Number(getComputedStyle(n).opacity));
-   const phase=Math.min(1,Math.max(0,(time-absolute(field.commitAt))/(width<=700?720:ESTIMATE_REVEAL_MS)));
+   const phase=Math.min(1,Math.max(0,(time-absolute(field.commitAt))/ESTIMATE_REVEAL_MS));
    const expected=width<=700?phase*phase*(3-2*phase):phase;
    assert.ok(Math.abs(opacity-expected)<.001);
    assert.deepEqual(await value.boundingBox(),initial);

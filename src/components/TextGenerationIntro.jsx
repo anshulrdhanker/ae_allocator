@@ -1,9 +1,10 @@
 'use client';
 import {useMemo,useRef,useLayoutEffect,useState} from 'react';
 import {narrationTokens,tokenPhase,NARRATION_EXIT,INTRO_LIFT_MS} from './intro.mjs';
-import {ease,progress,smoothProgress} from './narrative.mjs';
+import {ease,progress,smoothProgress,PHONE_RISE_MS} from './narrative.mjs';
 
-const PHONE_RISE_MS=900;
+const phoneLiftDuration=PHONE_RISE_MS*1.2;
+const liftEnd=NARRATION_EXIT-450;
 
 export default function TextGenerationIntro({line,reservedLines=null,previousLine,opening=null,closing=false,time,reduced,showThinking=true}){
  const root=useRef(null),active=useRef(null),[position,setPosition]=useState({left:0,top:0,width:184,compact:false});
@@ -54,7 +55,7 @@ export default function TextGenerationIntro({line,reservedLines=null,previousLin
  const exitProgress=ease(progress(time,0,exitDuration));
  // Use the existing end-of-paragraph hold for a gentler lift, keeping its end
  // and the breathing room before the next word cue unchanged.
- const handoff=reservedLines?progress(opening?.handoffTime??0,0,PHONE_RISE_MS*1.2):progress(opening?.handoffTime??0,-450-(INTRO_LIFT_MS-NARRATION_EXIT),INTRO_LIFT_MS);
+ const handoff=reservedLines?progress(opening?.handoffTime??0,liftEnd-phoneLiftDuration,phoneLiftDuration):progress(opening?.handoffTime??0,-450-(INTRO_LIFT_MS-NARRATION_EXIT),INTRO_LIFT_MS);
  const liftProgress=opening?.phase==='exit'?1:reduced?(reservedLines?Number(opening?.phase==='second'):Number(handoff>0)):smoothProgress(handoff);
  // The settled two-line workspace narration sits half a line below its origin.
  const secondOffset=(reservedLines?0:geometry.gap)*(reduced?1-(opening?.dock??0):1);
@@ -115,7 +116,7 @@ export default function TextGenerationIntro({line,reservedLines=null,previousLin
  return <section className="narrator" data-phone-opening={mobileOpening?.phase} data-static-pair={mobileOpening?.phase==='second'&&reduced||undefined} style={mobileOpening?{'--first-height':(geometry.first??0)+'px','--second-height':(geometry.second??0)+'px','--boundary':(geometry.boundary??0)+'px'}:undefined} data-plain-narration={!showThinking || undefined} aria-label="Narrator" ref={root} data-narration-state={exiting?'clearing':!reduced&&time<line.at?'blank':!reduced&&time<line.at+line.duration?'streaming':'complete'}>
   {reserve}
   <div className="narrator-copy" aria-hidden="true">
-   {opening&&<p ref={firstCopy} data-intro-paragraph="first" className={'intro-flow-first'+(opening.phase==='exit'?' intro-flow-history':'')} style={{visibility:opening.phase==='exit'&&!exiting?'hidden':'visible',opacity:mobileOpening?1-dock:opening.phase==='exit'?1-exitProgress:1,transform:`translateY(${firstY})`}}>{opening.phase==='first'?streamingWords:renderWords(firstTokens,Infinity)}</p>}
+   {opening&&<p ref={firstCopy} data-intro-paragraph="first" className={'intro-flow-first'+(opening.phase==='exit'?' intro-flow-history':'')} style={{visibility:opening.phase==='exit'&&!exiting?'hidden':'visible',opacity:mobileOpening?1:opening.phase==='exit'?1-exitProgress:1,transform:`translateY(${firstY})`}}>{opening.phase==='first'?streamingWords:renderWords(firstTokens,Infinity)}</p>}
    {opening?.phase==='first'&&<p ref={secondCopy} className="intro-flow-measure">{renderWords(secondTokens,-Infinity)}</p>}
    {opening?.phase!=='first'&&<p ref={secondCopy} data-intro-paragraph={opening?.phase==='second'?'second':undefined} style={opening?.phase==='second'?{transform:`translateY(${secondY})`}:undefined}>{streamingWords}</p>}
    {previousLine&&opening?.phase!=='second'&&<p className="narrator-previous" style={{visibility:exiting?'visible':'hidden',opacity:1-exitProgress,transform:`translateY(calc(${opening?.phase==='exit'?secondOffset+'px':workspaceNarration&&!opening?outgoingOffset:"0px"} - ${5*exitProgress}px))`}}>{previousLine.text}</p>}

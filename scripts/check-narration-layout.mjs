@@ -3,7 +3,7 @@ import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import http from 'node:http';
-import {chaptersFor,narrationFor,eventsFor,INTRO_DOCK_MS,INTRO_AFTER_DOCK_MS,INTRO_AFTER_BROWSER_MS} from '../src/components/narrative.mjs';
+import {chaptersFor,narrationFor,eventsFor,PHONE_RISE_MS,INTRO_DOCK_MS,INTRO_AFTER_DOCK_MS,INTRO_AFTER_BROWSER_MS} from '../src/components/narrative.mjs';
 import {narrationTokens,NARRATION_EXIT,INTRO_LIFT_MS} from '../src/components/intro.mjs';
 const data=JSON.parse(await fs.readFile('tests/fixtures.json','utf8')).default;
 const server=http.createServer(async(req,res)=>{const name=req.url==='/'?'index.html':'qa.js';res.setHeader('Content-Type',name.endsWith('.js')?'text/javascript':'text/html');res.end(await fs.readFile(`/tmp/living-document-qa/${name}`));});
@@ -46,7 +46,7 @@ try{
   assert.equal(second.at+450-NARRATION_EXIT,1310,'pause after lift before second paragraph');
   const frameAt=chapters[1].at+chapters[1].delay+EVENTS.frame-chapters[1].storyAt;
   const frameDoneAt=chapters[1].at+chapters[1].delay+EVENTS.frameDone-chapters[1].storyAt;
-  assert.equal(frameAt-(dockAt+INTRO_DOCK_MS),INTRO_AFTER_DOCK_MS);
+  assert.equal(frameAt-(dockAt+(width<=700?PHONE_RISE_MS:INTRO_DOCK_MS)),INTRO_AFTER_DOCK_MS);
   assert.equal(chapters[1].end-frameDoneAt,INTRO_AFTER_BROWSER_MS);
   for(const t of [dockAt+INTRO_DOCK_MS+500,frameAt-1]){await seek(t);assert.equal(await page.locator('.browser-window').evaluate(n=>getComputedStyle(n).visibility),'hidden');}
   await seek(frameDoneAt);const rested=await geometry();
@@ -54,8 +54,8 @@ try{
    const rise=original.first.y-beforeDock.first.y;
    near(rise,beforeDock.second.y-rested.second.y,'equal phone rises');
    for(const fraction of [.25,.5,.75]){
-    await seek(chapters[1].at+1080*fraction);const first=await geometry();
-    await seek(dockAt+900*fraction);const second=await geometry();
+    await seek(chapters[1].at-60-PHONE_RISE_MS*1.2*(1-fraction));const first=await geometry();
+    await seek(dockAt+PHONE_RISE_MS*fraction);const second=await geometry();
     near(original.first.y-first.first.y,beforeDock.second.y-second.second.y,'matched easing at playback speed');
    }
   }
@@ -66,7 +66,7 @@ try{
   await seek(chapters[1].end+550);assert.equal(await page.locator('.narrator-previous').evaluate(n=>getComputedStyle(n).visibility),'hidden');
   assert.equal(await page.locator('.browser-window').evaluate(n=>getComputedStyle(n).visibility),'visible','browser remains visible across chapter boundary');
   await seek(chapters[1].at-1);const beforeBoundary=await geometry();await seek(chapters[1].at);near((await geometry()).first.y,beforeBoundary.first.y,'continuous chapter boundary');
-  for(const delta of [1,100,350,INTRO_DOCK_MS-1,INTRO_DOCK_MS]){await seek(dockAt+delta);const g=await geometry();if(width<=700){assert.ok(g.second.y<=beforeDock.second.y);if(delta===INTRO_DOCK_MS){near(g.second.y,g.root.y,'docked in narration region');assert.equal(g.firstOpacity,'0');}continue;}assert.ok(g.second.y<beforeDock.second.y);assert.ok(g.first.y<beforeDock.first.y);if(delta===1)near(g.second.y,beforeDock.second.y,'continuous dock start');if(delta===INTRO_DOCK_MS){assert.ok(g.first.bottom<0,'first paragraph entirely offscreen');near(g.second.y,g.root.y+g.scale*g.lineHeight/2,'second paragraph lands at settled two-line baseline');}}
+  for(const delta of [1,100,350,INTRO_DOCK_MS-1,INTRO_DOCK_MS]){await seek(dockAt+delta);const g=await geometry();if(width<=700){assert.ok(g.second.y<=beforeDock.second.y);if(delta===INTRO_DOCK_MS){near(g.second.y,g.root.y,'docked in narration region');assert.ok(g.first.bottom<=g.root.y);}continue;}assert.ok(g.second.y<beforeDock.second.y);assert.ok(g.first.y<beforeDock.first.y);if(delta===1)near(g.second.y,beforeDock.second.y,'continuous dock start');if(delta===INTRO_DOCK_MS){assert.ok(g.first.bottom<0,'first paragraph entirely offscreen');near(g.second.y,g.root.y+g.scale*g.lineHeight/2,'second paragraph lands at settled two-line baseline');}}
   // Completed intro transitions out with the same fade before the next narration.
   await seek(chapters[1].end-1);const end=await geometry();await seek(chapters[1].end);const exit=await geometry();near(exit.first.y,end.first.y,'continuous intro exit');
   await seek(chapters[1].at-450-(INTRO_LIFT_MS-NARRATION_EXIT)+190);const paused=await geometry();await page.waitForTimeout(120);assert.deepEqual(await geometry(),paused);

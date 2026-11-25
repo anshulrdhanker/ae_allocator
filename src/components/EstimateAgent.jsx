@@ -3,7 +3,7 @@ import {estimateOperation,modelInputFields,ESTIMATE_REVEAL_MS} from './agent-act
 import {progress} from './narrative.mjs';
 
 export default function EstimateAgent({lead,time,at,reduced=false,collapse=0,mobile=false}){
- const fade=mobile?720:ESTIMATE_REVEAL_MS;
+ const fade=ESTIMATE_REVEAL_MS;
  const operation=estimateOperation(lead,at), done=time>=operation.committedAt+fade;
  const thinking=time>=at&&time<operation.outputs[0].at;
  const elapsed=Math.max(0,time-at);

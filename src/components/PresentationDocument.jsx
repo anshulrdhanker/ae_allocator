@@ -1,5 +1,5 @@
 import {useMemo} from 'react';
-import {deriveTimelineState,narrationFor,narrationPlayback,benchmarkTiming,ease,EVENTS,WORKSPACE_EXIT_MS} from './narrative.mjs';
+import {deriveTimelineState,narrationFor,narrationPlayback,benchmarkTiming,ease,eventsFor,WORKSPACE_EXIT_MS} from './narrative.mjs';
 import {arrivalLead,presentationSummary} from './selectors.mjs';
 import TextGenerationIntro from './TextGenerationIntro';
 import AgentWorkspace from './AgentWorkspace';
@@ -17,6 +17,7 @@ export default function PresentationDocument({data,controller,onParameters,busy=
  const summary=useMemo(()=>data?presentationSummary(data):null,[data]);
  const current=deriveTimelineState(data,state.time,reduced,controller.mobile);
  const duration=current.chapters.at(-1).end;
+ const EVENTS=eventsFor(controller.mobile);
  const introBeat=current.chapters[1];
  const allocation=current.chapters.find(b=>b.id==='shared_allocation'||b.id==='cohort_allocation');
  const screenChanges=[
