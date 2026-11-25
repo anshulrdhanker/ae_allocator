@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useReducer,useState,useRef,useCallback,useMemo} from 'react';
 import {initialPlayback,playbackReducer,advanceClock} from './playback.mjs';
-import {chaptersFor,INTRO_AFTER_BROWSER_MS} from './narrative.mjs';
+import {chaptersFor,INTRO_AFTER_BROWSER_MS,INTRO_PLAYBACK_SPEED} from './narrative.mjs';
 export default function usePresentation(data,suspended){
  const [state,baseDispatch]=useReducer(playbackReducer,undefined,initialPlayback);
  const [manualSpeed,setSpeed]=useState(null),[osReduced,setOSReduced]=useState(null),[manualReduced,setManualReduced]=useState(false);
@@ -12,7 +12,7 @@ export default function usePresentation(data,suspended){
   update();query.addEventListener('change',update);
   return ()=>query.removeEventListener('change',update);
  },[]);
- const speed=manualSpeed??(state.time<20000?1.2:1);
+ const speed=manualSpeed??(state.time<20000?INTRO_PLAYBACK_SPEED:1);
  const reduced=!!osReduced||manualReduced;
  const stateRef=useRef(state);stateRef.current=state;
  const chapters=useMemo(()=>chaptersFor(data,mobile),[data,mobile]);

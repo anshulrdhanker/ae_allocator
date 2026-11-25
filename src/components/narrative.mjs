@@ -22,6 +22,7 @@ export const EVENTS={
 };
 // Story cues remain local to their chapter. Changing an opening hold shifts
 // subsequent chapter starts, never the allocation graph's local clock.
+export const INTRO_PLAYBACK_SPEED=1.2;
 export const PHONE_RISE_MS=700;
 export const RECORD_EXPAND_MS=800;
 const phoneFrame=dockAt+PHONE_RISE_MS+INTRO_AFTER_DOCK_MS;
@@ -66,11 +67,14 @@ export function narrationFor(snapshot,data,summary){
  if(n===1&&snapshot.chapter==='shared_allocation')lines.shared_allocation='With one lead in this cohort, the algorithm checks whether AE involvement adds value and fits within both available time budgets.';
  const text=lines[snapshot.chapter];
  const focal={intro_problem:['decide','self-service'],intro_question:['optimization','limited'],inbound_record:['model','probabilities'],lead_economics:['increase','additional'],shared_allocation:['programming','optimal'],cohort_allocation:['simulated','baseline'],result:['optimized','improvement']}[snapshot.chapter];
- const rate=snapshot.chapter.startsWith('intro_')?1:2;
+ const intro=snapshot.chapter.startsWith('intro_');
+ const plainIntro=intro&&snapshot.mobile;
+ const rate=intro&&!plainIntro?1:2;
+ const wordClockScale=plainIntro?INTRO_PLAYBACK_SPEED:1;
  const readingMs=narrationDuration(text);
- const steady=['inbound_record','lead_economics','shared_allocation','result'].includes(snapshot.chapter);
+ const steady=!!plainIntro||['inbound_record','lead_economics','shared_allocation','result'].includes(snapshot.chapter);
  const speechDuration=steady?readingTokens(text,0,rate,true).at(-1).end:readingMs/rate;
- return {text,rate,readingMs,steady,liftThirdLine:snapshot.chapter==='shared_allocation',at:snapshot.chapter==='intro_problem'?450:snapshot.chapter==='intro_question'?1250:snapshot.chapter==='result'?BENCHMARK_INTRO_AT:NARRATION_LEAD_IN_MS,duration:speechDuration+(snapshot.chapter==='inbound_record'?1000:0)+(snapshot.chapter==='lead_economics'?400:0),focal};
+ return {text,rate,readingMs,steady,wordClockScale,liftThirdLine:snapshot.chapter==='shared_allocation',at:snapshot.chapter==='intro_problem'?450:snapshot.chapter==='intro_question'?1250:snapshot.chapter==='result'?BENCHMARK_INTRO_AT:NARRATION_LEAD_IN_MS,duration:speechDuration*wordClockScale+(snapshot.chapter==='inbound_record'?1000:0)+(snapshot.chapter==='lead_economics'?400:0),focal};
 }
 export function narrationPlayback(snapshot, data) {
  const {beat, chapters, local, reduced, time} = snapshot;
@@ -97,7 +101,7 @@ export function chaptersFor(data,mobile=false){
  return definitions.flatMap(([id,duration])=>{
   const sourceAt=storyAt;storyAt+=duration;
   if(data?.opportunities.length===0&&['inbound_record','lead_economics','shared_allocation'].includes(id))return [];
-  const line=narrationFor({chapter:id},data);
+  const line=narrationFor({chapter:id,mobile},data);
   // Budget reading time independently of reveal speed so workspace actions keep their pacing.
   const comparing=id==='shared_allocation'||id==='cohort_allocation';
   const storyRate=comparing||id==='result'?2:1;
